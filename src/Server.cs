@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Collections.Specialized;
+using System.ComponentModel.Design;
 using System.Data;
 using System.Net;
 using System.Net.Sockets;
@@ -6,6 +8,8 @@ using System.Text;
 
 var listerner = new TcpListener(IPAddress.Any, 6379);
 listerner.Start();
+
+ConcurrentDictionary<string, string> stringSetter = new ConcurrentDictionary<string, string>();  
 
 while (true)
 {
@@ -45,20 +49,34 @@ while (true)
                     await WriteSimpleString(stream, "PONG");
                     break;
                 case "ECHO":
-                    if (parts.Count < 2)
-                    {
-                        await WriteError(stream, "ECHO requires argument");
-                    }
+                    if (parts.Count < 2) await WriteError(stream, "ECHO requires argument");
+                    else await WriteBulkString(stream, parts[1]);
+                    break;
+
+                case "SET":
+                    if (parts.Count < 3) await WriteError(stream, "SET requires argument");
                     else
                     {
-                        await WriteBulkString(stream, parts[1]);
+                        stringSetter[parts[1]] = parts[2];
+                        await WriteSimpleString(stream, "OK");
+                    }
+                    break;
+                    
+                case "GET":
+                    if (parts.Count < 2) await WriteError(stream, "GET requires argument");
+                    else
+                    {
+                        if (!stringSetter.TryGetValue(parts[1], out var value))
+                            await NullBulkString(stream);
+                        else
+                            await WriteBulkString(stream, value);
+
                     }
                     break;
                 default:
                     await WriteError(stream, "Unknown command");
                     break;
             }
-
         }
     });
 }
@@ -68,8 +86,6 @@ List<string> ParseRESP(string request)
     // *2\r\n$4\r\nECHO\r\n$3\r\nhey\r\n
     List<string> parts = new List<string>();
     
-    var result = new List<string>();
-
     // Split by (\r\n)
     var lines = request.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
         
@@ -111,4 +127,10 @@ async Task WriteBulkString(NetworkStream stream, string message)
     var response = $"${message.Length}\r\n{message}\r\n";
     var bytes = Encoding.UTF8.GetBytes(response);
     await stream.WriteAsync(bytes);
+}
+
+async Task NullBulkString(NetworkStream stream)
+{
+    var nullString = Encoding.UTF8.GetBytes("$-1\r\n");
+    await stream.WriteAsync(nullString);
 }
