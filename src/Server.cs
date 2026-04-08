@@ -9,7 +9,7 @@ using System.Text;
 var listerner = new TcpListener(IPAddress.Any, 6379);
 listerner.Start();
 
-ConcurrentDictionary<string, string> stringSetter = new ConcurrentDictionary<string, string>();  
+ConcurrentDictionary<string, (string Value, DateTime? ExpiresAt)> stringSetter = new();
 
 while (true)
 {
@@ -48,30 +48,52 @@ while (true)
                 case "PING":
                     await WriteSimpleString(stream, "PONG");
                     break;
+              
                 case "ECHO":
                     if (parts.Count < 2) await WriteError(stream, "ECHO requires argument");
                     else await WriteBulkString(stream, parts[1]);
                     break;
 
                 case "SET":
-                    if (parts.Count < 3) await WriteError(stream, "SET requires argument");
-                    else
+                    if (parts.Count < 3)
                     {
-                        stringSetter[parts[1]] = parts[2];
-                        await WriteSimpleString(stream, "OK");
+                        await WriteError(stream, "SET requires argument");
+                        break;
                     }
+                    DateTime? expiresAt = null;
+                    if (parts.Count >= 5)
+                    {
+                        var option = parts[3].ToUpper();
+                        var amount = int.Parse(parts[4]);
+                        expiresAt = option switch
+                        {
+                            "PX" => DateTime.UtcNow.AddMilliseconds(amount),
+                            "EX" => DateTime.UtcNow.AddSeconds(amount),
+                            _ => null
+                        };
+                    }
+                    stringSetter[parts[1]] = (parts[2], expiresAt);
+                    await WriteSimpleString(stream, "OK");
                     break;
-                    
-                case "GET":
-                    if (parts.Count < 2) await WriteError(stream, "GET requires argument");
-                    else
-                    {
-                        if (!stringSetter.TryGetValue(parts[1], out var value))
-                            await NullBulkString(stream);
-                        else
-                            await WriteBulkString(stream, value);
 
+                case "GET":
+                    if (parts.Count < 2)
+                    {
+                        await WriteError(stream, "GET requires argument");
+                        break;
                     }
+                    if (!stringSetter.TryGetValue(parts[1], out var entry))
+                    {
+                        await NullBulkString(stream);
+                        break;
+                    }
+                    if (entry.ExpiresAt.HasValue && DateTime.UtcNow > entry.ExpiresAt.Value)
+                    {
+                        stringSetter.TryRemove(parts[1], out _);
+                        await NullBulkString(stream);
+                        break;
+                    }
+                    await WriteBulkString(stream, entry.Value);
                     break;
                 default:
                     await WriteError(stream, "Unknown command");
@@ -134,3 +156,10 @@ async Task NullBulkString(NetworkStream stream)
     var nullString = Encoding.UTF8.GetBytes("$-1\r\n");
     await stream.WriteAsync(nullString);
 }
+
+/*
+ * 3 STEPS ================> 
+ * 1- GET THE NORMAL STRING (each with it's own style)
+ * 2- ENCODE IT TO UTF-8
+ * 3- WRITE IT TO THE STREAM
+ */
