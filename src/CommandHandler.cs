@@ -43,10 +43,13 @@ public class CommandHandler
                 await HandleRPUSH(stream, parts);
                 break;
 
-            case "LRANGE":
+            case "LRANGE":  
                 await HandleLRANGE(stream, parts);
                 break;
 
+            case "LPUSH":
+                await HandleLPUSH(stream, parts);
+                break;
 
             // default case for unknown commands
             default:
@@ -117,7 +120,6 @@ public class CommandHandler
 
     private async Task HandleRPUSH(NetworkStream stream, List<string> parts)
     {
-        // redis-cli RPUSH list_key "element"
 
         if (parts.Count < 3)
         {
@@ -162,5 +164,19 @@ public class CommandHandler
 
         await RespWriter.WriteArray(stream, list);
     }
+
+    private async Task HandleLPUSH(NetworkStream stream, List<string> parts)
+    {
+        if (parts.Count < 3)
+        {
+            await RespWriter.WriteError(stream, "LPUSH requires a key and at least one value");
+            return;
+        }
+
+        var length = _store.LPUSH(parts);
+
+        await RespWriter.WriteInteger(stream, length);
+    }
+
 
 }

@@ -88,4 +88,30 @@ public class Store
         return list.GetRange(start, stop - start + 1);
     }
 
+    public int? LPUSH(List<string> parts)
+    {
+        var key = parts[1];
+        var listEntry = _listKeyDic.FirstOrDefault(kv => kv.Value == key);
+
+        List<string> list;
+
+        if (listEntry.Key == null)
+        {
+            list = new List<string>();
+            _listKeyDic[list] = key;
+        }
+        else
+        {
+            list = listEntry.Key;
+        }
+
+        // Insert each element at index 0, in order
+        // LPUSH key a b c → list becomes [c, b, a, ...existing]
+        for (int i = 2; i < parts.Count; i++)
+        {
+            list.Insert(0, parts[i]);
+        }
+
+        return list.Count;
+    }
 }
