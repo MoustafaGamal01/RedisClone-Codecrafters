@@ -119,8 +119,8 @@ public class CommandHandler
             await RespWriter.WriteError(stream, "RPUSH requires a key and at least one value");
             return;
         }
-        //_store.RPUSH(key, values); // return length of the list after push
-        var length = _store.RPUSH(parts[1], parts[2]);
+
+        var length = _store.RPUSH(parts);
 
         await RespWriter.WriteInteger(stream, length);
     }

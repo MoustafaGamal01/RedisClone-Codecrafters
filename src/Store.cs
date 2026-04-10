@@ -35,10 +35,12 @@ public class Store
         return entry.Value;
     }
 
-    public int? RPUSH(string key, string value)
+    public int? RPUSH(List<string> parts)
     {
         // Find the list associated with the key, or create a new one if it doesn't exist
+        var key = parts[1];
         var listEntry = _listKeyDic.FirstOrDefault(kv => kv.Value == key);
+        
         List<string> list;
        
         if (listEntry.Key == null)
@@ -52,7 +54,10 @@ public class Store
             list = listEntry.Key;
         }
 
-        list.Add(value);
+        for (int i = 2; i < parts.Count; i++)
+        {
+            list.Add(parts[i]);
+        }
 
         return list.Count;
     }
