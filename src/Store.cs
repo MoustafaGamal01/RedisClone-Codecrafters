@@ -32,6 +32,11 @@ public class Store
         return entry.Value;
     }
 
+    public bool KeySearch(string key)
+    {
+        return _listKeyDic.Values.Contains(key);
+    }
+
     public int? RPUSH(List<string> parts)
     {
         // Find the list associated with the key, or create a new one if it doesn't exist
@@ -57,6 +62,32 @@ public class Store
         }
 
         return list.Count;
+    }
+
+    public async Task<List<string>> LRANGE(List<string> parts, int start, int stop)
+    {
+        // *2\r\n$5\r\nhello\r\n$5\r\nworld\r\n
+        var key = parts[1];
+        var listEntry = _listKeyDic.FirstOrDefault(kv => kv.Value == key);
+
+        List<string> list;
+
+        if (listEntry.Key == null)
+        {
+            return new List<string>(); // Return empty list if key doesn't exist
+        }
+        else
+        {
+            // Key already exists
+            list = listEntry.Key;
+        }
+
+        for (int i = start; i <= stop; i++)
+        {
+            list.Add(parts[i]);
+        }
+
+        return list;
     }
 
 }
