@@ -151,7 +151,12 @@ public class CommandHandler
             return;
         }
 
-        await RespWriter.WriteArray(stream, list);
+        foreach (var item in list)
+        {
+            Console.WriteLine(item);
+        }
+
+        await RespWriter.WriteArray(stream, list, start, stop);
     }
 
 }
