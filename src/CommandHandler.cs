@@ -143,7 +143,7 @@ public class CommandHandler
             return;
         }
 
-        var list = await _store.LRANGE(parts, start, stop);
+        var list = _store.LRANGE(parts, start, stop);
 
         if (list is null)
         {
@@ -158,7 +158,7 @@ public class CommandHandler
             Console.WriteLine(item);
         }
 
-        await RespWriter.WriteArray(stream, list, start, stop);
+        await RespWriter.WriteArray(stream, list);
     }
 
 }

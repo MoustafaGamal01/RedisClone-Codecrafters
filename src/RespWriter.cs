@@ -35,16 +35,14 @@ public static class RespWriter
         await stream.WriteAsync(bytes);
     }
 
-    public static async Task WriteArray(NetworkStream stream, List<string> items, int start, int stop)
+    public static async Task WriteArray(NetworkStream stream, List<string> items)
     {
         var sb = new StringBuilder();
         sb.Append($"*{items.Count}\r\n");
-        int mn = Math.Min(stop, items.Count - 1);
-        for (int i = start; i <= mn; i++)
+        foreach (var item in items)
         {
-            sb.Append($"${items[i].Length}\r\n{items[i]}\r\n");
+            sb.Append($"${item.Length}\r\n{item}\r\n");
         }
-
         var bytes = Encoding.UTF8.GetBytes(sb.ToString());
         await stream.WriteAsync(bytes);
     }

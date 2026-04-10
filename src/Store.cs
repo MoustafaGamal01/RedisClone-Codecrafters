@@ -64,18 +64,25 @@ public class Store
         return list.Count;
     }
 
-    public async Task<List<string>> LRANGE(List<string> parts, int start, int stop)
+    public List<string> LRANGE(List<string> parts, int start, int stop)
     {
-        // *2\r\n$5\r\nhello\r\n$5\r\nworld\r\n
         var key = parts[1];
         var listEntry = _listKeyDic.FirstOrDefault(kv => kv.Value == key);
 
         if (listEntry.Key == null)
-        {
-            return new List<string>(); // Return empty list if key doesn't exist
-        }
+            return new List<string>();
 
-        return listEntry.Key;
+        var list = listEntry.Key;
+
+        if (stop < 0) stop = list.Count + stop;
+        if (start < 0) start = list.Count + start;
+
+        stop = Math.Min(stop, list.Count - 1);
+
+        if (start > stop || start >= list.Count)
+            return new List<string>();
+
+        return list.GetRange(start, stop - start + 1);
     }
 
 }
