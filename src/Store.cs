@@ -73,13 +73,16 @@ public class Store
             return new List<string>();
 
         var list = listEntry.Key;
-
-        if (stop < 0) stop = list.Count + stop;
+        var listCount = list.Count;
+        // Handle negative indices (-1 means last element)
         if (start < 0) start = list.Count + start;
+        if (stop < 0) stop = list.Count + stop;
+        if (start < 0) start = 0;
 
-        stop = Math.Min(stop, list.Count - 1);
+        // Clamp to valid range
+        stop = Math.Min(stop, listCount - 1);
 
-        if (start > stop || start >= list.Count)
+        if (start > stop || start >= listCount)
             return new List<string>();
 
         return list.GetRange(start, stop - start + 1);
