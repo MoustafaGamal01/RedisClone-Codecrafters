@@ -34,4 +34,23 @@ public static class RespWriter
         var bytes = Encoding.UTF8.GetBytes($":{num}\r\n");
         await stream.WriteAsync(bytes);
     }
+
+    public static async Task WriteArray(NetworkStream stream, List<string> items)
+    {
+        var sb = new StringBuilder();
+        sb.Append($"*{items.Count}\r\n");
+        foreach (var item in items)
+        {
+            sb.Append($"${item.Length}\r\n{item}\r\n");
+        }
+        var bytes = Encoding.UTF8.GetBytes(sb.ToString());
+        await stream.WriteAsync(bytes);
+    }
+
+    public static async Task WriteEmptyArray(NetworkStream stream)
+    {
+        var message = "*0\r\n";
+        var bytes = Encoding.UTF8.GetBytes(message);
+        await stream.WriteAsync(bytes);
+    }
 }

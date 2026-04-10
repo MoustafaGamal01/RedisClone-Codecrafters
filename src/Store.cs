@@ -12,10 +12,7 @@ public class Store
         _stringKeyDic[key] = (value, expiresAt);
     }
 
-    public void Set(string key, List<string> value)
-    {
-        _listKeyDic[value] = key;
-    }
+   
 
     /// <summary>
     /// Returns the value if the key exists and hasn't expired.
@@ -61,4 +58,5 @@ public class Store
 
         return list.Count;
     }
+
 }

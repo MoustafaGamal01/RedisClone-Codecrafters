@@ -40,9 +40,12 @@ public class CommandHandler
                 break;
 
             case "RPUSH":
-                await HandleRPush(stream, parts);
+                await HandleRPUSH(stream, parts);
                 break;
 
+            case "LRANGE":
+                await HandleLRANGE( stream, parts);
+                break;
 
             default:
                 await RespWriter.WriteError(stream, $"Unknown command '{command}'");
@@ -110,7 +113,7 @@ public class CommandHandler
             await RespWriter.WriteBulkString(stream, value);
     }
 
-    private async Task HandleRPush(NetworkStream stream, List<string> parts)
+    private async Task HandleRPUSH(NetworkStream stream, List<string> parts)
     {
         // redis-cli RPUSH list_key "element"
 
@@ -124,4 +127,31 @@ public class CommandHandler
 
         await RespWriter.WriteInteger(stream, length);
     }
+
+    private async Task HandleLRANGE(NetworkStream stream, List<string> parts, int start, int stop)
+    {
+
+        if (parts.Count < 3)
+        {
+            await RespWriter.WriteError(stream, "LRANGE requires more arguments");
+            return;
+        }
+
+        if (!int.TryParse(parts[2], out var st) || !int.TryParse(parts[3], out var stp))
+        {
+            await RespWriter.WriteError(stream, "LRANGE start and stop must be integers");
+            return;
+        }
+
+        var list = await _store.LRANGE(parts, st, stp);
+
+        if (list is null)
+        {
+            await RespWriter.WriteEmptyArray(stream);
+            return;
+        }
+
+        await RespWriter.WriteArray(stream, list);
+    }
+
 }
