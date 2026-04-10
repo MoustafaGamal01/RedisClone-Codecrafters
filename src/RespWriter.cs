@@ -28,4 +28,10 @@ public static class RespWriter
         var bytes = Encoding.UTF8.GetBytes($"-ERR {message}\r\n");
         await stream.WriteAsync(bytes);
     }
+
+    public static async Task WriteInteger(NetworkStream stream , int? num)
+    {
+        var bytes = Encoding.UTF8.GetBytes($":{num}\r\n");
+        await stream.WriteAsync(bytes);
+    }
 }

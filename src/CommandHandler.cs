@@ -39,6 +39,11 @@ public class CommandHandler
                 await HandleGet(stream, parts);
                 break;
 
+            case "RPUSH":
+                await HandleRPush(stream, parts);
+                break;
+
+
             default:
                 await RespWriter.WriteError(stream, $"Unknown command '{command}'");
                 break;
@@ -80,7 +85,7 @@ public class CommandHandler
                 {
                     "EX" => DateTime.UtcNow.AddSeconds(amount),
                     "PX" => DateTime.UtcNow.AddMilliseconds(amount),
-                    _    => null
+                    _ => null
                 };
             }
         }
@@ -103,5 +108,22 @@ public class CommandHandler
             await RespWriter.WriteNullBulkString(stream);
         else
             await RespWriter.WriteBulkString(stream, value);
+    }
+
+    private async Task HandleRPush(NetworkStream stream, List<string> parts)
+    {
+        // redis-cli RPUSH list_key "element"
+
+        if (parts.Count < 3)
+        {
+            await RespWriter.WriteError(stream, "RPUSH requires a key and at least one value");
+            return;
+        }
+        //_store.RPUSH(key, values); // return length of the list after push
+        var length = _store.RPUSH(parts[1], parts[2]);
+
+        var key = parts[1];
+        var values = parts[2];
+        await RespWriter.WriteInteger(stream, length);
     }
 }
