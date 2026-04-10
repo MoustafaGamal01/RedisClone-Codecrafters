@@ -51,6 +51,10 @@ public class CommandHandler
                 await HandleLPUSH(stream, parts);
                 break;
 
+            case "LLEN":
+                await HandleLLEN(stream, parts);
+                break;
+
             // default case for unknown commands
             default:
                 await RespWriter.WriteError(stream, $"Unknown command '{command}'");
@@ -178,5 +182,10 @@ public class CommandHandler
         await RespWriter.WriteInteger(stream, length);
     }
 
+    private async Task HandleLLEN(NetworkStream stream, List<string> parts)
+    {
+        var size = _store.LLEN(parts);
+        await RespWriter.WriteInteger(stream, size);
+    }
 
 }

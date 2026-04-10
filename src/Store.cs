@@ -105,13 +105,23 @@ public class Store
             list = listEntry.Key;
         }
 
-        // Insert each element at index 0, in order
-        // LPUSH key a b c → list becomes [c, b, a, ...existing]
         for (int i = 2; i < parts.Count; i++)
         {
             list.Insert(0, parts[i]);
         }
 
         return list.Count;
+    }
+
+    public int? LLEN(List<string> parts)
+    {
+        var key = parts[1];
+
+        var list = _listKeyDic.FirstOrDefault(kv => kv.Value == key);
+
+        if (list.Key == null)
+            return 0;
+
+        return list.Key.Count;
     }
 }
