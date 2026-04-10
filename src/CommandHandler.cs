@@ -44,7 +44,7 @@ public class CommandHandler
                 break;
 
             case "LRANGE":
-                await HandleLRANGE( stream, parts);
+                await HandleLRANGE(stream, parts);
                 break;
 
             default:
@@ -128,7 +128,7 @@ public class CommandHandler
         await RespWriter.WriteInteger(stream, length);
     }
 
-    private async Task HandleLRANGE(NetworkStream stream, List<string> parts, int start, int stop)
+    private async Task HandleLRANGE(NetworkStream stream, List<string> parts)
     {
 
         if (parts.Count < 3)
@@ -137,13 +137,13 @@ public class CommandHandler
             return;
         }
 
-        if (!int.TryParse(parts[2], out var st) || !int.TryParse(parts[3], out var stp))
+        if (!int.TryParse(parts[2], out var start) || !int.TryParse(parts[3], out var stop))
         {
             await RespWriter.WriteError(stream, "LRANGE start and stop must be integers");
             return;
         }
 
-        var list = await _store.LRANGE(parts, st, stp);
+        var list = await _store.LRANGE(parts, start, stop);
 
         if (list is null)
         {
