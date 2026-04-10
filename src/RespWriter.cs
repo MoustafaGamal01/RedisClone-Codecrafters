@@ -35,7 +35,7 @@ public static class RespWriter
         await stream.WriteAsync(bytes);
     }
 
-    public static async Task WriteArray(NetworkStream stream, List<string> items)
+    public static async Task WriteArray(NetworkStream stream, List<string> items, int start, int stop)
     {
         var sb = new StringBuilder();
         sb.Append($"*{items.Count}\r\n");
