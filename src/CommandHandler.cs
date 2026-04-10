@@ -47,6 +47,8 @@ public class CommandHandler
                 await HandleLRANGE(stream, parts);
                 break;
 
+
+            // default case for unknown commands
             default:
                 await RespWriter.WriteError(stream, $"Unknown command '{command}'");
                 break;
@@ -130,6 +132,7 @@ public class CommandHandler
 
     private async Task HandleLRANGE(NetworkStream stream, List<string> parts)
     {
+
         if (parts.Count < 3)
         {
             await RespWriter.WriteError(stream, "LRANGE requires more arguments");
