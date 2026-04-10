@@ -18,7 +18,7 @@ while (true)
     _ = Task.Run(async () =>
     {
         var stream = client.GetStream();
-        var buffer = new byte[1024];
+        var buffer = new byte[40096];
 
         while (true)
         {
