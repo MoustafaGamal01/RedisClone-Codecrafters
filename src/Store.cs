@@ -124,4 +124,17 @@ public class Store
 
         return list.Key.Count;
     }
+
+    public string? LPOP(List<string> parts)
+    {
+        var key = parts[1];
+        var listEntry = _listKeyDic.FirstOrDefault(kv => kv.Value == key);
+
+        if (listEntry.Key == null || listEntry.Key.Count == 0)
+            return null;
+        var list = listEntry.Key;
+        var value = list[0];
+        list.RemoveAt(0);
+        return value;
+    }
 }

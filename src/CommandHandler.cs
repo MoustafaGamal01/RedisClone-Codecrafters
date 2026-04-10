@@ -55,6 +55,10 @@ public class CommandHandler
                 await HandleLLEN(stream, parts);
                 break;
 
+            case "LPOP":
+                await HandleLPOP(stream, parts);
+                break;
+
             // default case for unknown commands
             default:
                 await RespWriter.WriteError(stream, $"Unknown command '{command}'");
@@ -188,4 +192,13 @@ public class CommandHandler
         await RespWriter.WriteInteger(stream, size);
     }
 
+
+    private async Task HandleLPOP(NetworkStream stream, List<string> parts)
+    {
+        var value = _store.LPOP(parts);
+        if (value is null)
+            await RespWriter.WriteNullBulkString(stream);
+        else
+            await RespWriter.WriteBulkString(stream, value);
+    }
 }
