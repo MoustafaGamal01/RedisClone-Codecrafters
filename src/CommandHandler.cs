@@ -151,6 +151,8 @@ public class CommandHandler
             return;
         }
 
+        // for debugging
+        Console.WriteLine(list.Count);
         foreach (var item in list)
         {
             Console.WriteLine(item);

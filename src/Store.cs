@@ -70,24 +70,12 @@ public class Store
         var key = parts[1];
         var listEntry = _listKeyDic.FirstOrDefault(kv => kv.Value == key);
 
-        List<string> list;
-
         if (listEntry.Key == null)
         {
             return new List<string>(); // Return empty list if key doesn't exist
         }
-        else
-        {
-            // Key already exists
-            list = listEntry.Key;
-        }
 
-        for (int i = start; i <= stop; i++)
-        {
-            list.Add(parts[i]);
-        }
-
-        return list;
+        return listEntry.Key;
     }
 
 }
