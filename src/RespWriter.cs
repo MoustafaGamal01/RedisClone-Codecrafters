@@ -39,10 +39,12 @@ public static class RespWriter
     {
         var sb = new StringBuilder();
         sb.Append($"*{items.Count}\r\n");
-        for (int i = start; i <= Math.Min(stop, items.Count-1); i++)
+        int mn = Math.Min(stop, items.Count - 1);
+        for (int i = start; i <= mn; i++)
         {
             sb.Append($"${items[i].Length}\r\n{items[i]}\r\n");
         }
+
         var bytes = Encoding.UTF8.GetBytes(sb.ToString());
         await stream.WriteAsync(bytes);
     }
