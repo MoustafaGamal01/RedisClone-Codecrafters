@@ -130,7 +130,6 @@ public class CommandHandler
 
     private async Task HandleLRANGE(NetworkStream stream, List<string> parts)
     {
-
         if (parts.Count < 3)
         {
             await RespWriter.WriteError(stream, "LRANGE requires more arguments");
@@ -145,7 +144,7 @@ public class CommandHandler
 
         var list = _store.LRANGE(parts, start, stop);
 
-        if (list is null)
+        if (list.Count == 0)
         {
             await RespWriter.WriteEmptyArray(stream);
             return;
