@@ -122,8 +122,6 @@ public class CommandHandler
         //_store.RPUSH(key, values); // return length of the list after push
         var length = _store.RPUSH(parts[1], parts[2]);
 
-        var key = parts[1];
-        var values = parts[2];
         await RespWriter.WriteInteger(stream, length);
     }
 }
