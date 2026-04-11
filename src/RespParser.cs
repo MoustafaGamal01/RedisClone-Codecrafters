@@ -8,18 +8,22 @@ public static class RespParser
     /// </summary>
     public static List<string> Parse(string request)
     {
+        var lines = request.Split("\r\n");
         var parts = new List<string>();
-        var lines = request.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+        int i = 0;
 
-        foreach (var line in lines)
+        if (lines[i].StartsWith("*"))
         {
-            // Skip array (*) and bulk string length ($) indicators
-            if (line.StartsWith("*") || line.StartsWith("$"))
-                continue;
-
-            parts.Add(line);
+            int count = int.Parse(lines[i][1..]);
+            i++;
+            for (int j = 0; j < count; j++)
+            {
+                if (lines[i].StartsWith("$")) i++; // skip length line
+                parts.Add(lines[i]);
+                i++;
+            }
         }
-
         return parts;
+
     }
 }
