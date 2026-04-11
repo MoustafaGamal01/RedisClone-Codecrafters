@@ -198,7 +198,9 @@ public class CommandHandler
         var value = _store.LPOP(parts);
         if (value is null)
             await RespWriter.WriteNullBulkString(stream);
-        else
-            await RespWriter.WriteBulkString(stream, value);
+        else if(parts.Count == 2)
+            await RespWriter.WriteBulkString(stream, value[0]);
+        else 
+            await RespWriter.WriteArray(stream, value);
     }
 }

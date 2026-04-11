@@ -125,16 +125,41 @@ public class Store
         return list.Key.Count;
     }
 
-    public string? LPOP(List<string> parts)
+    public List<string> LPOP(List<string> parts)
     {
         var key = parts[1];
+        int partCount = parts.Count;
+
         var listEntry = _listKeyDic.FirstOrDefault(kv => kv.Value == key);
 
         if (listEntry.Key == null || listEntry.Key.Count == 0)
             return null;
-        var list = listEntry.Key;
-        var value = list[0];
-        list.RemoveAt(0);
+
+        var list = listEntry.Key; // all values
+        var value = new List<string>(); // values to be removed and returned
+        if (partCount == 2)
+        {
+            value.Add(list[0]);
+            list.RemoveAt(0);
+        }
+        else
+        {
+            int num = int.Parse(parts[2]);
+            if (num > list.Count)
+            {
+
+                List<string> temp = new List<string>(list);
+                list.Clear();
+
+                return temp;
+            }
+            value = list.GetRange(0, num); // nums to be removed
+            while (num > 0)
+            {
+                list.RemoveAt(0);
+                num--;
+            }
+        }
         return value;
     }
 }
