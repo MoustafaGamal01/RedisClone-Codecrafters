@@ -4,72 +4,36 @@ using System.Collections.Concurrent;
 
 public class Store
 {
-    private readonly ConcurrentDictionary<string, (string Value, DateTime? ExpiresAt)> _stringKeyDic = new();
-    private readonly ConcurrentDictionary<List<string>, string> _listKeyDic = new ();
+    private readonly ConcurrentDictionary<string, (string Value, DateTime? ExpiresAt)> _stringStore = new();
+    private readonly ConcurrentDictionary<string, List<string>> _listStore = new();
     private readonly ConcurrentDictionary<string, Queue<TaskCompletionSource<string>>> _waiters = new();
-    public Store() { }
-    //public Store(ConcurrentDictionary<string, (string Value, DateTime? ExpiresAt)> stringKeyDic,
-    //    ConcurrentDictionary<List<string>, string> listKeyDic,
-    //    Queue<List<string>> keyQueue)
-    //{
-    //    _stringKeyDic = stringKeyDic;
-    //    _listKeyDic = listKeyDic;
-    //    _keyQueue = keyQueue;
-    //}
 
     public void Set(string key, string value, DateTime? expiresAt = null)
     {
-        _stringKeyDic[key] = (value, expiresAt);
+        _stringStore[key] = (value, expiresAt);
     }
 
-   
-
-    /// <summary>
-    /// Returns the value if the key exists and hasn't expired.
-    /// Returns null if the key doesn't exist or has expired (and removes it).
-    /// </summary>
     public string? Get(string key)
     {
-        if (!_stringKeyDic.TryGetValue(key, out var entry))
+        if (!_stringStore.TryGetValue(key, out var entry))
             return null;
 
         if (entry.ExpiresAt.HasValue && DateTime.UtcNow > entry.ExpiresAt.Value)
         {
-            _stringKeyDic.TryRemove(key, out _);
+            _stringStore.TryRemove(key, out _);
             return null;
         }
 
         return entry.Value;
     }
 
-    public bool KeySearch(string key)
-    {
-        return _listKeyDic.Values.Contains(key);
-    }
-
     public int? RPUSH(List<string> parts)
     {
-        // Find the list associated with the key, or create a new one if it doesn't exist
         var key = parts[1];
-        var listEntry = _listKeyDic.FirstOrDefault(kv => kv.Value == key);
-        
-        List<string> list;
-       
-        if (listEntry.Key == null)
-        {
-            list = new List<string>();
-            _listKeyDic[list] = key;
-        }
-        else
-        {
-            // Key already exists
-            list = listEntry.Key;
-        }
+        var list = _listStore.GetOrAdd(key, _ => new List<string>());
 
         for (int i = 2; i < parts.Count; i++)
-        {
             list.Add(parts[i]);
-        }
 
         return list.Count;
     }
@@ -77,19 +41,16 @@ public class Store
     public List<string> LRANGE(List<string> parts, int start, int stop)
     {
         var key = parts[1];
-        var listEntry = _listKeyDic.FirstOrDefault(kv => kv.Value == key);
 
-        if (listEntry.Key == null)
+        if (!_listStore.TryGetValue(key, out var list))
             return new List<string>();
 
-        var list = listEntry.Key;
         var listCount = list.Count;
-        // Handle negative indices (-1 means last element)
-        if (start < 0) start = list.Count + start;
-        if (stop < 0) stop = list.Count + stop;
+
+        if (start < 0) start = listCount + start;
+        if (stop < 0) stop = listCount + stop;
         if (start < 0) start = 0;
 
-        // Clamp to valid range
         stop = Math.Min(stop, listCount - 1);
 
         if (start > stop || start >= listCount)
@@ -101,24 +62,10 @@ public class Store
     public int? LPUSH(List<string> parts)
     {
         var key = parts[1];
-        var listEntry = _listKeyDic.FirstOrDefault(kv => kv.Value == key);
-
-        List<string> list;
-
-        if (listEntry.Key == null)
-        {
-            list = new List<string>();
-            _listKeyDic[list] = key;
-        }
-        else
-        {
-            list = listEntry.Key;
-        }
+        var list = _listStore.GetOrAdd(key, _ => new List<string>());
 
         for (int i = 2; i < parts.Count; i++)
-        {
             list.Insert(0, parts[i]);
-        }
 
         return list.Count;
     }
@@ -127,27 +74,22 @@ public class Store
     {
         var key = parts[1];
 
-        var list = _listKeyDic.FirstOrDefault(kv => kv.Value == key);
-
-        if (list.Key == null)
+        if (!_listStore.TryGetValue(key, out var list))
             return 0;
 
-        return list.Key.Count;
+        return list.Count;
     }
 
-    public List<string> LPOP(List<string> parts)
+    public List<string>? LPOP(List<string> parts)
     {
         var key = parts[1];
-        int partCount = parts.Count;
 
-        var listEntry = _listKeyDic.FirstOrDefault(kv => kv.Value == key);
-
-        if (listEntry.Key == null || listEntry.Key.Count == 0)
+        if (!_listStore.TryGetValue(key, out var list) || list.Count == 0)
             return null;
 
-        var list = listEntry.Key; // all values
-        var value = new List<string>(); // values to be removed and returned
-        if (partCount == 2)
+        var value = new List<string>();
+
+        if (parts.Count == 2)
         {
             value.Add(list[0]);
             list.RemoveAt(0);
@@ -157,19 +99,14 @@ public class Store
             int num = int.Parse(parts[2]);
             if (num > list.Count)
             {
-
-                List<string> temp = new List<string>(list);
+                var temp = new List<string>(list);
                 list.Clear();
-
                 return temp;
             }
-            value = list.GetRange(0, num); // nums to be removed
-            while (num > 0)
-            {
-                list.RemoveAt(0);
-                num--;
-            }
+            value = list.GetRange(0, num);
+            list.RemoveRange(0, num);
         }
+
         return value;
     }
 
@@ -181,7 +118,7 @@ public class Store
         {
             queue.Enqueue(tcs);
         }
-        return tcs.Task; // suspends until SetResult is called
+        return tcs.Task;
     }
 
     public bool TryNotifyWaiter(string key, string value)
@@ -191,7 +128,7 @@ public class Store
         {
             if (queue.Count == 0) return false;
             var tcs = queue.Dequeue();
-            tcs.SetResult(value); // wakes up the waiting BLPOP client
+            tcs.SetResult(value);
             return true;
         }
     }
