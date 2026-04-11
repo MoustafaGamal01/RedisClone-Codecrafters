@@ -53,4 +53,11 @@ public static class RespWriter
         var bytes = Encoding.UTF8.GetBytes(message);
         await stream.WriteAsync(bytes);
     }
+
+    public static async Task WriteNullArray(NetworkStream stream)
+    {
+        var bytes = Encoding.UTF8.GetBytes("*-1\r\n");
+        await stream.WriteAsync(bytes);
+    }
+
 }

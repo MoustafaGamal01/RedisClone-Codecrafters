@@ -222,6 +222,7 @@ public class CommandHandler
         }
 
         var key = parts[1];
+        var timeout = double.Parse(parts[parts.Count - 1]);
 
         var existing = _store.LPOP(new List<string> { "LPOP", key });
         if (existing != null)
@@ -230,8 +231,27 @@ public class CommandHandler
             return;
         }
 
-        var value = await _store.BLPOP(key); 
+        var waitTask = _store.BLPOP(key);
 
-        await RespWriter.WriteArray(stream, new List<string> { key, value });
+        if (timeout == 0)
+        {
+            var value = await waitTask;
+            await RespWriter.WriteArray(stream, new List<string> { key, value });
+            return;
+        }
+
+        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(timeout));
+        var winner = await Task.WhenAny(waitTask, timeoutTask);
+
+        if (winner == timeoutTask)
+        {
+            await RespWriter.WriteNullArray(stream);
+        }
+        else
+        {
+            var value = await waitTask;
+            await RespWriter.WriteArray(stream, new List<string> { key, value });
+        }
     }
+
 }
