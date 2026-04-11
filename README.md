@@ -10,17 +10,27 @@ A Redis-compatible in-memory data store built from scratch in C# as part of the 
 
 ```
 RedisSharp/
-├── Program.cs               → TCP listener loop, accepts clients, spawns tasks
+├── Program.cs
 ├── Core/
-│   ├── Store.cs             → Unified thread-safe in-memory store (single ConcurrentDictionary)
-│   ├── RedisValue.cs        → Abstract base class with expiry logic
-│   ├── RedisString.cs       → Concrete string value type
-│   └── RedisList.cs         → Concrete list value type
+│   ├── Store.cs
+│   ├── RedisValue.cs       ← base class + RedisString + RedisList
+│   └── ClientHandler.cs
 ├── Protocol/
-│   ├── RespParser.cs        → Parses raw RESP2 bytes into string parts
-│   └── RespWriter.cs        → Encodes and writes RESP2 responses to the stream
+│   ├── RespParser.cs
+│   └── RespWriter.cs
 └── Commands/
-    └── CommandHandler.cs    → Routes parsed commands to the right handler
+    ├── ICommandHandler.cs
+    ├── CommandDispatcher.cs
+    ├── PingCommand.cs
+    ├── EchoCommand.cs
+    ├── SetCommand.cs
+    ├── GetCommand.cs
+    ├── RpushCommand.cs
+    ├── LpushCommand.cs
+    ├── LrangeCommand.cs
+    ├── LpopCommand.cs
+    └── BlpopCommand.cs
+
 ```
 
 Each client connection runs on its own `Task`, allowing the server to handle multiple concurrent clients without blocking the main loop.
