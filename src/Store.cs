@@ -5,7 +5,17 @@ using System.Collections.Concurrent;
 public class Store
 {
     private readonly ConcurrentDictionary<string, (string Value, DateTime? ExpiresAt)> _stringKeyDic = new();
-    private readonly ConcurrentDictionary<List<string>, string> _listKeyDic= new();
+    private readonly ConcurrentDictionary<List<string>, string> _listKeyDic = new ();
+    private readonly ConcurrentDictionary<string, Queue<TaskCompletionSource<string>>> _waiters = new();
+    public Store() { }
+    //public Store(ConcurrentDictionary<string, (string Value, DateTime? ExpiresAt)> stringKeyDic,
+    //    ConcurrentDictionary<List<string>, string> listKeyDic,
+    //    Queue<List<string>> keyQueue)
+    //{
+    //    _stringKeyDic = stringKeyDic;
+    //    _listKeyDic = listKeyDic;
+    //    _keyQueue = keyQueue;
+    //}
 
     public void Set(string key, string value, DateTime? expiresAt = null)
     {
@@ -162,4 +172,29 @@ public class Store
         }
         return value;
     }
+
+    public Task<string> BLPOP(string key)
+    {
+        var tcs = new TaskCompletionSource<string>();
+        var queue = _waiters.GetOrAdd(key, _ => new Queue<TaskCompletionSource<string>>());
+        lock (queue)
+        {
+            queue.Enqueue(tcs);
+        }
+        return tcs.Task; // suspends until SetResult is called
+    }
+
+    public bool TryNotifyWaiter(string key, string value)
+    {
+        if (!_waiters.TryGetValue(key, out var queue)) return false;
+        lock (queue)
+        {
+            if (queue.Count == 0) return false;
+            var tcs = queue.Dequeue();
+            tcs.SetResult(value); // wakes up the waiting BLPOP client
+            return true;
+        }
+    }
+
+
 }

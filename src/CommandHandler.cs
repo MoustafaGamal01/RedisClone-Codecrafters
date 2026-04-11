@@ -59,6 +59,9 @@ public class CommandHandler
                 await HandleLPOP(stream, parts);
                 break;
 
+            case "BLPOP":
+                await HandleBLPOP(stream, parts);
+                break;
             // default case for unknown commands
             default:
                 await RespWriter.WriteError(stream, $"Unknown command '{command}'");
@@ -126,19 +129,6 @@ public class CommandHandler
             await RespWriter.WriteBulkString(stream, value);
     }
 
-    private async Task HandleRPUSH(NetworkStream stream, List<string> parts)
-    {
-
-        if (parts.Count < 3)
-        {
-            await RespWriter.WriteError(stream, "RPUSH requires a key and at least one value");
-            return;
-        }
-
-        var length = _store.RPUSH(parts);
-
-        await RespWriter.WriteInteger(stream, length);
-    }
 
     private async Task HandleLRANGE(NetworkStream stream, List<string> parts)
     {
@@ -192,7 +182,6 @@ public class CommandHandler
         await RespWriter.WriteInteger(stream, size);
     }
 
-
     private async Task HandleLPOP(NetworkStream stream, List<string> parts)
     {
         var value = _store.LPOP(parts);
@@ -202,5 +191,47 @@ public class CommandHandler
             await RespWriter.WriteBulkString(stream, value[0]);
         else 
             await RespWriter.WriteArray(stream, value);
+    }
+
+    private async Task HandleRPUSH(NetworkStream stream, List<string> parts)
+    {
+        if (parts.Count < 3)
+        {
+            await RespWriter.WriteError(stream, "RPUSH requires a key and at least one value");
+            return;
+        }
+
+        var key = parts[1];
+
+        if (_store.TryNotifyWaiter(key, parts[2]))
+        {
+            await RespWriter.WriteInteger(stream, 1);
+            return;
+        }
+
+        var length = _store.RPUSH(parts);
+        await RespWriter.WriteInteger(stream, length);
+    }
+
+    private async Task HandleBLPOP(NetworkStream stream, List<string> parts)
+    {
+        if (parts.Count < 3)
+        {
+            await RespWriter.WriteError(stream, "BLPOP requires a key and timeout");
+            return;
+        }
+
+        var key = parts[1];
+
+        var existing = _store.LPOP(new List<string> { "LPOP", key });
+        if (existing != null)
+        {
+            await RespWriter.WriteArray(stream, new List<string> { key, existing[0] });
+            return;
+        }
+
+        var value = await _store.BLPOP(key); 
+
+        await RespWriter.WriteArray(stream, new List<string> { key, value });
     }
 }
