@@ -32,7 +32,7 @@ namespace codecrafters_redis.src.Commands
             if (value is null)
                 await RespWriter.WriteNullBulkString(stream);
             else
-                await RespWriter.WriteBulkString(stream, value);
+                await RespWriter.WriteBulkString(stream, value.ToString().ToLower());
         }
     }
 }

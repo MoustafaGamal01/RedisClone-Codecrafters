@@ -26,7 +26,7 @@ namespace codecrafters_redis.src.Commands
 
             var value = _store.TYPE(key);
         
-            await RespWriter.WriteSimpleString(stream, value);
+            await RespWriter.WriteSimpleString(stream, value.ToString().ToLower());
         }
     }
 }

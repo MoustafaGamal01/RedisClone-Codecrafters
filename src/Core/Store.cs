@@ -2,6 +2,7 @@ namespace codecrafters_redis.src.Core;
 
 using codecrafters_redis.src.Redis;
 using System.Collections.Concurrent;
+using codecrafters_redis.src.Core;
 
 public class Store
 {
@@ -10,7 +11,7 @@ public class Store
     private readonly ConcurrentDictionary<string, Queue<TaskCompletionSource<string>>> _waiters = new();
     public void Set(string key, string value, DateTime? expiresAt = null)
     {
-        _store[key] = new RedisString { Value = value, ExpiresAt = expiresAt };
+        _store[key] = new RedisString { type = value, ExpiresAt = expiresAt };
     }
 
     public string? Get(string key)
@@ -18,13 +19,13 @@ public class Store
         if (!_store.TryGetValue(key, out var entry)) return null;
         if (entry.IsExpired) { _store.TryRemove(key, out _); return null; }
         if (entry is not RedisString str) return null;
-        return str.Value;
+        return str.type;
     }
 
     public int? RPUSH(List<string> parts)
     {
         var key = parts[1];
-        var redisList = GetOrCreateList(key);
+        var redisList = GetOrCreate<RedisList>(key);
 
         for (int i = 2; i < parts.Count; i++)
             redisList.Items.Add(parts[i]);
@@ -35,7 +36,7 @@ public class Store
     public int? LPUSH(List<string> parts)
     {
         var key = parts[1];
-        var redisList = GetOrCreateList(key);
+        var redisList = GetOrCreate<RedisList>(key);
 
         for (int i = 2; i < parts.Count; i++)
             redisList.Items.Insert(0, parts[i]);
@@ -127,14 +128,9 @@ public class Store
         }
     }
 
-    private RedisList GetOrCreateList(string key)
+    private T GetOrCreate<T>(string key) where T : RedisValue, new()
     {
-        return (RedisList)_store.GetOrAdd(key, _ => new RedisList());
-    }
-
-    private RedisStream GetOrCreateStream(string key)
-    {
-        return (RedisStream)_store.GetOrAdd(key, _ => new RedisStream());
+        return (T)_store.GetOrAdd(key, _ => new T());
     }
 
     public string? TYPE(string key)
@@ -152,7 +148,7 @@ public class Store
 
     public string? XADD(string key, string id, Dictionary<string, string> fields)
     {
-        var stream = GetOrCreateStream(key);
+        var stream = GetOrCreate<RedisStream>(key);
         stream.Entries.Add(fields);
         return id;
     }

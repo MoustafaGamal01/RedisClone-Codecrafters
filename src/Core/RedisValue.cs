@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 
 namespace codecrafters_redis.src.Redis
 {
-    public enum RedisType { String, List }
-
     public abstract class RedisValue
     {
         public DateTime? ExpiresAt { get; set; }
