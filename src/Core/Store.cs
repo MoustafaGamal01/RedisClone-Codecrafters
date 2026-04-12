@@ -132,16 +132,28 @@ public class Store
         return (RedisList)_store.GetOrAdd(key, _ => new RedisList());
     }
 
-    public string? Type(string key)
+    private RedisStream GetOrCreateStream(string key)
+    {
+        return (RedisStream)_store.GetOrAdd(key, _ => new RedisStream());
+    }
+
+    public string? TYPE(string key)
     {
         if (!_store.TryGetValue(key, out var value)) return "none";
 
         return value switch
         {
             RedisString => "string",
+            RedisStream => "stream",
             RedisList => "list",
             _ => "unknown"
         };
     }
 
+    public string? XADD(string key, string id, Dictionary<string, string> fields)
+    {
+        var stream = GetOrCreateStream(key);
+        stream.Entries.Add(fields);
+        return id;
+    }
 }

@@ -24,7 +24,7 @@ namespace codecrafters_redis.src.Commands
         {
             string? key = parts[1];
 
-            var value = _store.Type(key);
+            var value = _store.TYPE(key);
         
             await RespWriter.WriteSimpleString(stream, value);
         }
