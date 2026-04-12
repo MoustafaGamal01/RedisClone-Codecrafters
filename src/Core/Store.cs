@@ -147,49 +147,58 @@ public class Store
         };
     }
 
-    public (bool, string)? XADD(string key, string id, Dictionary<string, string> fields)
+    public (bool Success, string Value) XADD(string key, string id, Dictionary<string, string> fields)
     {
-        /// get/create the key
-        /// check the last entry's id, if the provided id is not greater, return an error
-        var stream = GetOrCreate<RedisStream>(key); 
-        
         // this entry
+        var stream = GetOrCreate<RedisStream>(key);
         var splitId = id.Split('-');
+        var (timeInMs, sequence) = ResolveXADDId(splitId, stream);
 
-        var sequence = 0;
+        if (timeInMs == 0 && sequence == 0)
+            return (false, "ERR The ID specified in XADD must be greater than 0-0");
+
+        // validate last entry
+        if (stream.Entries.Count > 0)
+        {
+            var lastId = stream.Entries.Last().Id.Split('-');
+            var lastTimeInMs = long.Parse(lastId[0]);
+            var lastSequence = int.Parse(lastId[1]);
+
+            if (timeInMs < lastTimeInMs || (timeInMs == lastTimeInMs && sequence <= lastSequence))
+                return (false, "ERR The ID specified in XADD is equal or smaller than the target stream top item");
+        }
+
+        var resolvedId = $"{timeInMs}-{sequence}";
+        stream.Entries.Add((resolvedId, fields));
+        return (true, resolvedId);
+    }
+
+    private (long timeInMs, int sequence) ResolveXADDId(string[] splitId, RedisStream stream)
+    {
+        var timeInMs = long.Parse(splitId[0]);
+        int sequence;
+
         if (splitId[1] == "*")
         {
-            if (splitId[0] == "0") splitId[1] = "1";
-            else splitId[1] = "0";
-        }
-        sequence = int.Parse(splitId[1]);
-        var timeInMs = long.Parse(splitId[0]);
-
-        // prv entry
-        if(stream.Entries.Count > 0)
-        {
-            var lastEntryId = stream.Entries.Last().Id;
-            if (lastEntryId != null)
+            // auto-gene sequence
+            if (stream.Entries.Count > 0)
             {
-                var splitLastId = lastEntryId.Split('-');
-                var lastTimeInMs = long.Parse(splitLastId[0]);
-                var lastSequence = int.Parse(splitLastId[1]);
-
-                if(splitId[1] == "0")
-                    if (splitLastId[0] == splitId[0]) sequence = int.Parse(splitLastId[1]) + 1;
-                
-                if(timeInMs == 0 && sequence == 0)
-                    return (false, "The ID specified in XADD must be greater than 0-0");
-                if (timeInMs < lastTimeInMs || (timeInMs == lastTimeInMs && sequence <= lastSequence))
-                    return(false, "The ID specified in XADD is equal or smaller than the target stream top item");
+                var lastId = stream.Entries.Last().Id.Split('-');
+                var lastTime = long.Parse(lastId[0]);
+                var lastSeq = int.Parse(lastId[1]);
+                sequence = timeInMs == lastTime ? lastSeq + 1 : 0;
+            }
+            else
+            {
+                sequence = timeInMs == 0 ? 1 : 0;
             }
         }
+        else
+        {
+            sequence = int.Parse(splitId[1]);
+        }
 
-        
-        id = $"{timeInMs}-{sequence}";
-
-        stream.Entries.Add((id, fields));
-        return (true, id);
+        return (timeInMs, sequence);
     }
 }
 

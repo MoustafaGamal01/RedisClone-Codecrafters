@@ -24,10 +24,10 @@ namespace codecrafters_redis.src.Commands
         {
             var result = _store.XADD(parts[1], parts[2], parts.Skip(3).ToDictionary(k => k, v => v));
 
-            if(result.Value.Item1 == false)
-                await RespWriter.WriteError(stream, result.Value.Item2);
+            if(result.Success == false)
+                await RespWriter.WriteError(stream, result.Value);
             else
-                await RespWriter.WriteBulkString(stream, result.Value.Item2);
+                await RespWriter.WriteBulkString(stream, result.Value);
 
         }
     }
