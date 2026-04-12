@@ -9,6 +9,6 @@ namespace codecrafters_redis.src.Core
 {
     internal class RedisStream : RedisValue
     {
-        public List<Dictionary<string, string>> Entries { get; } = new List<Dictionary<string, string>>();
+        public List<(string Id, Dictionary<string, string> Fields)> Entries { get; } = new();
     }
 }

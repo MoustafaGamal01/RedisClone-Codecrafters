@@ -3,6 +3,7 @@ namespace codecrafters_redis.src.Core;
 using codecrafters_redis.src.Redis;
 using System.Collections.Concurrent;
 using codecrafters_redis.src.Core;
+using System.Xml.Linq;
 
 public class Store
 {
@@ -146,10 +147,35 @@ public class Store
         };
     }
 
-    public string? XADD(string key, string id, Dictionary<string, string> fields)
+    public (bool, string)? XADD(string key, string id, Dictionary<string, string> fields)
     {
-        var stream = GetOrCreate<RedisStream>(key);
-        stream.Entries.Add(fields);
-        return id;
+        /// get/create the key
+        /// check the last entry's id, if the provided id is not greater, return an error
+        
+        // this entry
+        var splitId = id.Split('-');
+        var timeInMs = long.Parse(splitId[0]);
+        var sequence = int.Parse(splitId[1]);
+
+        var stream = GetOrCreate<RedisStream>(key); 
+        // prv entry
+        if(stream.Entries.Count > 0)
+        {
+            var lastEntryId = stream.Entries.Last().Id;
+            if (lastEntryId != null)
+            {
+                var splitLastId = lastEntryId.Split('-');
+                var lastTimeInMs = long.Parse(splitLastId[0]);
+                var lastSequence = int.Parse(splitLastId[1]);
+                if(timeInMs == 0 && sequence == 0)
+                    return (false, "The ID specified in XADD must be greater than 0-0");
+                if (timeInMs < lastTimeInMs || (timeInMs == lastTimeInMs && sequence <= lastSequence))
+                    return(false, "The ID specified in XADD is equal or smaller than the target stream top item");
+            }
+        }
+
+        stream.Entries.Add((id, fields));
+        return (true, id);
     }
 }
+

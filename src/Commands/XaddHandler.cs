@@ -22,9 +22,13 @@ namespace codecrafters_redis.src.Commands
 
         public async Task Handle(NetworkStream stream, List<string> parts)
         {
-            _store.XADD(parts[1],   parts[2], parts.Skip(3).ToDictionary(k => k, v => v));
+            var result = _store.XADD(parts[1], parts[2], parts.Skip(3).ToDictionary(k => k, v => v));
 
-            await RespWriter.WriteBulkString(stream, parts[2]);
+            if(result.Value.Item1 == false)
+                await RespWriter.WriteError(stream, result.Value.Item2);
+            else
+                await RespWriter.WriteBulkString(stream, result.Value.Item2);
+
         }
     }
 }
