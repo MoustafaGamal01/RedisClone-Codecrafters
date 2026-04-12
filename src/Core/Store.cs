@@ -151,13 +151,20 @@ public class Store
     {
         /// get/create the key
         /// check the last entry's id, if the provided id is not greater, return an error
+        var stream = GetOrCreate<RedisStream>(key); 
         
         // this entry
         var splitId = id.Split('-');
-        var timeInMs = long.Parse(splitId[0]);
-        var sequence = int.Parse(splitId[1]);
 
-        var stream = GetOrCreate<RedisStream>(key); 
+        var sequence = 0;
+        if (splitId[1] == "*")
+        {
+            if (splitId[0] == "0") splitId[1] = "1";
+            else splitId[1] = "0";
+        }
+        sequence = int.Parse(splitId[1]);
+        var timeInMs = long.Parse(splitId[0]);
+
         // prv entry
         if(stream.Entries.Count > 0)
         {
@@ -167,12 +174,19 @@ public class Store
                 var splitLastId = lastEntryId.Split('-');
                 var lastTimeInMs = long.Parse(splitLastId[0]);
                 var lastSequence = int.Parse(splitLastId[1]);
+
+                if(splitId[1] == "0")
+                    if (splitLastId[0] == splitId[0]) sequence = int.Parse(splitLastId[1]) + 1;
+                
                 if(timeInMs == 0 && sequence == 0)
                     return (false, "The ID specified in XADD must be greater than 0-0");
                 if (timeInMs < lastTimeInMs || (timeInMs == lastTimeInMs && sequence <= lastSequence))
                     return(false, "The ID specified in XADD is equal or smaller than the target stream top item");
             }
         }
+
+        
+        id = $"{timeInMs}-{sequence}";
 
         stream.Entries.Add((id, fields));
         return (true, id);
