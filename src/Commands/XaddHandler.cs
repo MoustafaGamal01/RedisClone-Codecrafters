@@ -20,17 +20,6 @@ namespace codecrafters_redis.src.Commands
 
         public CommandsName CommandName => CommandsName.XADD;
 
-        public async Task Handle1(NetworkStream stream, List<string> parts)
-        {
-            var result = _store.XADD(parts[1], parts[2], parts.Skip(3).ToDictionary(k => k, v => v));
-
-            if(result.Success == false)
-                await RespWriter.WriteError(stream, result.Value);
-            else
-                await RespWriter.WriteBulkString(stream, result.Value);
-
-        }
-
         public async Task Handle(NetworkStream stream, List<string> parts)
         {
             var key = parts[1];
