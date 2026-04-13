@@ -24,8 +24,8 @@ public class CommandHandler
             new LPopHandler(store),
             new LPushHandler(store),
             new TypeHandler(store),
-            new XaddHandler(store)
-        };
+            new XaddHandler(store),
+            new XRangeHandler(store)};
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());   
     }
 

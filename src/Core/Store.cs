@@ -147,6 +147,7 @@ public class Store
         };
     }
 
+
     public (bool Success, string Value) XADD(string key, string id, Dictionary<string, string> fields)
     {
         var stream = GetOrCreate<RedisStream>(key);
@@ -200,6 +201,37 @@ public class Store
         }
 
         return (timeInMs, sequence);
+    }
+
+    public List<(string Id, Dictionary<string, string> Fields)> XRange(string key, string startId, string endId)
+    {
+        if (!_store.TryGetValue(key, out var entry) || entry is not RedisStream stream)
+            return new();
+
+        var result = new List<(string Id, Dictionary<string, string> Fields)>();
+
+        foreach (var item in stream.Entries)
+        {
+            if (IsIdInRange(item.Id, startId, endId))
+                result.Add(item);
+        }
+
+        return result;
+    }
+    private bool IsIdInRange(string id, string startId, string endId)
+    {
+        var idParts = id.Split('-');
+        var startParts = startId.Split('-');
+        var endParts = endId.Split('-');
+        var idTime = long.Parse(idParts[0]);
+        var idSeq = int.Parse(idParts[1]);
+        var startTime = long.Parse(startParts[0]);
+        var startSeq = int.Parse(startParts[1]);
+        var endTime = long.Parse(endParts[0]);
+        var endSeq = int.Parse(endParts[1]);
+
+        return (idTime > startTime || (idTime == startTime && idSeq >= startSeq)) &&
+               (idTime < endTime || (idTime == endTime && idSeq <= endSeq));
     }
 }
 

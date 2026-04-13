@@ -19,6 +19,7 @@ namespace codecrafters_redis.src.Commands
         LPOP,
         BLPOP,
         TYPE,
-        XADD
+        XADD,
+        XRANGE,
     }
 }
