@@ -158,7 +158,7 @@ public class Store
         var (timeInMs, sequence) = ResolveXADDId(splitId, stream);
 
         if (timeInMs == 0 && sequence == 0)
-            return (false, "ERR The ID specified in XADD must be greater than 0-0");
+            return (false, "The ID specified in XADD must be greater than 0-0");
 
         if (stream.Entries.Count > 0)
         {
@@ -167,7 +167,7 @@ public class Store
             var lastSequence = int.Parse(lastId[1]);
 
             if (timeInMs < lastTimeInMs || (timeInMs == lastTimeInMs && sequence <= lastSequence))
-                return (false, "ERR The ID specified in XADD is equal or smaller than the target stream top item");
+                return (false, "The ID specified in XADD is equal or smaller than the target stream top item");
         }
 
         var resolvedId = $"{timeInMs}-{sequence}";
