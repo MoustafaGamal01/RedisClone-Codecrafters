@@ -70,15 +70,12 @@ public static class RespWriter
             sb.Append("*2\r\n");
             sb.Append($"${entry.Id.Length}\r\n{entry.Id}\r\n");
 
-            // Count is * 2 because every entry has 1 Key and 1 Value
             sb.Append($"*{entry.Fields.Count * 2}\r\n");
 
             foreach (var field in entry.Fields)
             {
-                // FIX: Use field.Key for the first part
                 sb.Append($"${field.Key.Length}\r\n{field.Key}\r\n");
 
-                // FIX: Use field.Value for the second part
                 sb.Append($"${field.Value.Length}\r\n{field.Value}\r\n");
             }
         }

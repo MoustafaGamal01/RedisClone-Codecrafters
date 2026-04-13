@@ -220,13 +220,21 @@ public class Store
     }
     private bool IsIdInRange(string id, string startId, string endId)
     {
+        long startTime = 0;
+        var startSeq = 0;
+
+        if (startId != "-")
+        {
+            var startParts = startId.Split('-');
+            startTime = long.Parse(startParts[0]);
+            startSeq = int.Parse(startParts[1]);
+        }
+
         var idParts = id.Split('-');
-        var startParts = startId.Split('-');
-        var endParts = endId.Split('-');
-        var idTime = long.Parse(idParts[0]);
         var idSeq = int.Parse(idParts[1]);
-        var startTime = long.Parse(startParts[0]);
-        var startSeq = int.Parse(startParts[1]);
+        var idTime = long.Parse(idParts[0]);
+
+        var endParts = endId.Split('-');
         var endTime = long.Parse(endParts[0]);
         var endSeq = int.Parse(endParts[1]);
 
