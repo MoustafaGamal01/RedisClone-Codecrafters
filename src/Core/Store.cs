@@ -151,11 +151,31 @@ public class Store
     {
         // this entry
         var stream = GetOrCreate<RedisStream>(key);
+
+        // auto-generate id
+        if (id == "*")
+        {
+            var deftimeInMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var defsequence = 0;
+            if (stream.Entries.Count > 0)
+            {
+                var lastId = stream.Entries.Last().Id.Split('-');
+                var lastTime = long.Parse(lastId[0]);
+                var lastSeq = int.Parse(lastId[1]);
+                if (deftimeInMs == lastTime) defsequence = lastSeq + 1;
+            }
+
+            var diffresolvedId = $"{deftimeInMs}-{defsequence}";
+            stream.Entries.Add((diffresolvedId, fields));
+            return (true, diffresolvedId);
+        }
+        
+
         var splitId = id.Split('-');
         var (timeInMs, sequence) = ResolveXADDId(splitId, stream);
 
         if (timeInMs == 0 && sequence == 0)
-            return (false, "ERR The ID specified in XADD must be greater than 0-0");
+            return (false, "The ID specified in XADD must be greater than 0-0");
 
         // validate last entry
         if (stream.Entries.Count > 0)
@@ -165,7 +185,7 @@ public class Store
             var lastSequence = int.Parse(lastId[1]);
 
             if (timeInMs < lastTimeInMs || (timeInMs == lastTimeInMs && sequence <= lastSequence))
-                return (false, "ERR The ID specified in XADD is equal or smaller than the target stream top item");
+                return (false, "The ID specified in XADD is equal or smaller than the target stream top item");
         }
 
         var resolvedId = $"{timeInMs}-{sequence}";
