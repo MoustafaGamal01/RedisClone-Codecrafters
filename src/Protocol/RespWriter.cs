@@ -84,4 +84,38 @@ public static class RespWriter
         await stream.WriteAsync(data, 0, data.Length);
     }
 
+    public static async Task WriteXRead(
+    NetworkStream stream,
+    List<(string StreamKey, string Id, Dictionary<string, string> Fields)> entries)
+    {
+        var sb = new StringBuilder();
+
+        // Top level
+        sb.Append($"*{entries.Count}\r\n");
+
+        foreach (var entry in entries)
+        {
+            sb.Append("*2\r\n");
+
+            sb.Append($"${entry.StreamKey.Length}\r\n{entry.StreamKey}\r\n");
+
+            sb.Append("*1\r\n");
+
+            sb.Append("*2\r\n");
+
+            sb.Append($"${entry.Id.Length}\r\n{entry.Id}\r\n");
+
+            sb.Append($"*{entry.Fields.Count * 2}\r\n");
+
+            foreach (var field in entry.Fields)
+            {
+                sb.Append($"${field.Key.Length}\r\n{field.Key}\r\n");
+                sb.Append($"${field.Value.Length}\r\n{field.Value}\r\n");
+            }
+        }
+
+        var data = Encoding.UTF8.GetBytes(sb.ToString());
+        await stream.WriteAsync(data, 0, data.Length);
+    }
+
 }

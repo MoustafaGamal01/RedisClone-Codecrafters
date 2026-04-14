@@ -4,6 +4,7 @@ using codecrafters_redis.src.Redis;
 using System.Collections.Concurrent;
 using codecrafters_redis.src.Core;
 using System.Xml.Linq;
+using codecrafters_redis.src.Commands;
 
 public class Store
 {
@@ -220,12 +221,13 @@ public class Store
     }
     private bool IsIdInRange(string id, string startId, string endId)
     {
+        long startTime = 0, endTime = long.MaxValue;
+        int startSeq = 0, endSeq = int.MaxValue;
+        
         var idParts = id.Split('-');
         var idSeq = int.Parse(idParts[1]);
         var idTime = long.Parse(idParts[0]);
 
-        long startTime = 0;
-        var startSeq = 0;
         if (startId != "-")
         {
             var startParts = startId.Split('-');
@@ -233,8 +235,6 @@ public class Store
             startSeq = int.Parse(startParts[1]);
         }
 
-        long endTime = long.MaxValue;
-        int endSeq = int.MaxValue;
         if (endId != "+")
         {
             var endParts = endId.Split('-');
@@ -243,6 +243,36 @@ public class Store
         }
         return (idTime > startTime || (idTime == startTime && idSeq >= startSeq)) &&
                (idTime < endTime || (idTime == endTime && idSeq <= endSeq));
+    }
+
+    public List<(string Id, Dictionary<string, string> Fields)> XREAD(string key, string lastId)
+    {
+        if (!_store.TryGetValue(key, out var entry) || entry is not RedisStream stream)
+            return new();
+
+        var result = new List<(string Id, Dictionary<string, string> Fields)>();
+        
+        foreach (var item in stream.Entries)
+        {
+            if (IsIdGreaterThan(item.Id, lastId))
+                result.Add(item);
+        }
+
+        return result;
+    }
+
+    private bool IsIdGreaterThan(string id, string lastId)
+    {
+        if (lastId == "$") return true;
+        var idParts = id.Split('-');
+        var idTime = long.Parse(idParts[0]);
+        var idSeq = int.Parse(idParts[1]);
+
+        var lastIdParts = lastId.Split('-');
+        var lastIdTime = long.Parse(lastIdParts[0]);
+        var lastIdSeq = int.Parse(lastIdParts[1]);
+        
+        return idTime > lastIdTime || (idTime == lastIdTime && idSeq > lastIdSeq);
     }
 }
 
