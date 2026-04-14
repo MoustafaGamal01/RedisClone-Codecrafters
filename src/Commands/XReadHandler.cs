@@ -21,20 +21,35 @@ namespace codecrafters_redis.src.Commands
 
         public CommandsName CommandName => CommandsName.XREAD;
 
+
         public async Task Handle(NetworkStream stream, List<string> parts)
         {
-            if(parts.Count != 4)
+            int size = (parts.Count - 2) / 2;
+
+            var keys = parts.Skip(2).Take(size).ToList();
+            var ids = parts.Skip(2 + size).Take(size).ToList();
+
+            if (keys.Count != ids.Count)
             {
-                await RespWriter.WriteError(stream, "wrong number of arguments for 'XREAD' command");
+                await RespWriter.WriteError(stream, "the number of keys and ids must be the same");
                 return;
             }
 
-            var result = _store.XREAD(parts[2], parts[3]);
+            // 🔥 collect all results first
+            var response = new List<(string StreamKey, List<(string Id, Dictionary<string, string> Fields)> Entries)>();
 
-            var resultList = result.Select(r => (StreamKey: parts[2], Id: r.Id, Fields: r.Fields)).ToList();
+            for (int i = 0; i < keys.Count; i++)
+            {
+                var entries = _store.XREAD(keys[i], ids[i]);
 
-            await RespWriter.WriteXRead(stream, resultList);
-        
+                if (entries.Count > 0) // Redis بيرجع بس اللي فيه data
+                {
+                    response.Add((keys[i], entries));
+                }
+            }
+
+            await RespWriter.WriteXRead(stream, response);
         }
+
     }
 }
