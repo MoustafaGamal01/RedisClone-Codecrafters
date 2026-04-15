@@ -8,7 +8,7 @@ public class Store
     private readonly ConcurrentDictionary<string, RedisValue> _store = new();
     private readonly ConcurrentDictionary<string, Queue<TaskCompletionSource<string>>> _waiters = new();
     private readonly ConcurrentDictionary<string, List<TaskCompletionSource<bool>>> _streamWaiters = new();
-
+    private readonly object _lock = new();
     public void Set(string key, string value, DateTime? expiresAt = null)
     {
         _store[key] = new RedisString { type = value, ExpiresAt = expiresAt };
@@ -177,29 +177,98 @@ public class Store
     }
 
     public async Task<List<(string StreamKey, List<(string Id, Dictionary<string, string> Fields)> Entries)>>
-    XRead(List<string> keys, List<string> ids, int blockMs)
+XRead(List<string> keys, List<string> ids, int blockMs)
     {
+        // =========================
+        // STEP 1: SNAPSHOT RESOLVE
+        // =========================
+        // If ID is "$", we freeze it to "current last entry"
+        for (int i = 0; i < ids.Count; i++)
+        {
+            if (ids[i] == "$")
+            {
+                if (_store.TryGetValue(keys[i], out var entry) &&
+                    entry is RedisStream stream &&
+                    stream.Entries.Count > 0)
+                {
+                    ids[i] = stream.Entries.Last().Id;
+                }
+                else
+                {
+                    // empty stream → behave like "0-0"
+                    ids[i] = "0-0";
+                }
+            }
+        }
+
+        // =========================
+        // STEP 2: TRY READ FIRST
+        // =========================
         var result = ReadAvailable(keys, ids);
-        if (result.Count > 0) return result;
 
-        var waitTasks = keys.Select(WaitForStreamAsync).ToList();
+        if (result.Count > 0)
+            return result;
 
+        // no blocking → return empty
+        if (blockMs < 0)
+            return new();
+
+        // =========================
+        // STEP 3: REGISTER WAITERS (BLOCK)
+        // =========================
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        lock (_lock)
+        {
+            foreach (var key in keys)
+            {
+                var waiters = _streamWaiters.GetOrAdd(key, _ => new List<TaskCompletionSource<bool>>());
+                waiters.Add(tcs);
+            }
+        }
+
+        // =========================
+        // STEP 4: WAIT (BLOCK OR TIMEOUT)
+        // =========================
         Task completed;
 
         if (blockMs == 0)
         {
-            completed = await Task.WhenAny(waitTasks);
+            // BLOCK FOREVER
+            completed = await Task.WhenAny(tcs.Task);
         }
         else
         {
             var delay = Task.Delay(blockMs);
-            completed = await Task.WhenAny(Task.WhenAny(waitTasks), delay);
+            completed = await Task.WhenAny(tcs.Task, delay);
 
             if (completed == delay)
+            {
+                RemoveWaiter(tcs, keys);
                 return new();
+            }
         }
 
+        RemoveWaiter(tcs, keys);
+
+        // =========================
+        // STEP 5: RETURN NEW DATA AFTER WAKE
+        // =========================
         return ReadAvailable(keys, ids);
+    }
+
+    private void RemoveWaiter(TaskCompletionSource<bool> tcs, List<string> keys)
+    {
+        lock (_lock)
+        {
+            foreach (var key in keys)
+            {
+                if (_streamWaiters.TryGetValue(key, out var list))
+                {
+                    list.Remove(tcs);
+                }
+            }
+        }
     }
 
     private List<(string StreamKey, List<(string Id, Dictionary<string, string> Fields)> Entries)>
@@ -304,6 +373,7 @@ public class Store
         } 
         return result; 
     }
+    
     private bool IsIdInRange(string id, string startId, string endId)
     {
         long startTime = 0, endTime = long.MaxValue; int startSeq = 0, endSeq = int.MaxValue; 
