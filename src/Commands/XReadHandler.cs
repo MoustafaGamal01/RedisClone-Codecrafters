@@ -21,34 +21,52 @@ namespace codecrafters_redis.src.Commands
 
         public CommandsName CommandName => CommandsName.XREAD;
 
-
         public async Task Handle(NetworkStream stream, List<string> parts)
         {
-            int size = (parts.Count - 2) / 2;
+            int blockMs = -1;
+            int index = 1;
 
-            var keys = parts.Skip(2).Take(size).ToList();
-            var ids = parts.Skip(2 + size).Take(size).ToList();
-
-            if (keys.Count != ids.Count)
+            if (index < parts.Count && parts[index].Equals("BLOCK", StringComparison.OrdinalIgnoreCase))
             {
-                await RespWriter.WriteError(stream, "the number of keys and ids must be the same");
+                if (index + 1 >= parts.Count || !int.TryParse(parts[index + 1], out blockMs))
+                {
+                    await RespWriter.WriteError(stream, "ERR invalid BLOCK value");
+                    return;
+                }
+
+                index += 2;
+            }
+
+            if (index >= parts.Count || !parts[index].Equals("STREAMS", StringComparison.OrdinalIgnoreCase))
+            {
+                await RespWriter.WriteError(stream, "ERR syntax error");
                 return;
             }
 
-            // 🔥 collect all results first
-            var response = new List<(string StreamKey, List<(string Id, Dictionary<string, string> Fields)> Entries)>();
+            index++;
 
-            for (int i = 0; i < keys.Count; i++)
+            var remaining = parts.Count - index;
+
+            if (remaining <= 0 || remaining % 2 != 0)
             {
-                var entries = _store.XREAD(keys[i], ids[i]);
-
-                if (entries.Count > 0) // Redis بيرجع بس اللي فيه data
-                {
-                    response.Add((keys[i], entries));
-                }
+                await RespWriter.WriteError(stream, "ERR Unbalanced XREAD list of streams");
+                return;
             }
 
-            await RespWriter.WriteXRead(stream, response);
+            int size = remaining / 2;
+
+            var keys = parts.Skip(index).Take(size).ToList();
+            var ids = parts.Skip(index + size).Take(size).ToList();
+
+            var result = await _store.XRead(keys, ids, blockMs);
+
+            if (result.Count == 0)
+            {
+                await RespWriter.WriteNullArray(stream);
+                return;
+            }
+
+            await RespWriter.WriteXRead(stream, result);
         }
 
     }
