@@ -4,14 +4,23 @@ using codecrafters_redis.src.Redis;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection.Metadata.Ecma335;
+using System.Runtime.CompilerServices;
 
 public class Store
 {
+    public enum MultiState
+    {
+        multi,
+        exec,
+        none
+    }
+
     private readonly ConcurrentDictionary<string, RedisValue> _store = new();
     private readonly ConcurrentDictionary<string, Queue<TaskCompletionSource<string>>> _waiters = new();
     private readonly ConcurrentDictionary<string, List<TaskCompletionSource<bool>>> _streamWaiters = new();
     private readonly object _lock = new();
-    public static bool multiState = false;
+    public static MultiState multiState = MultiState.none;
+
 
     public void Set(string key, string value, DateTime? expiresAt = null)
     {
@@ -407,16 +416,25 @@ public class Store
         return (success, number);
     }
 
-    public string MULTI()
+    public MultiState MULTI()
     {
-        multiState = true;  
-        return "OK";
+        multiState = MultiState.multi;  
+        return multiState;
     }
 
-    public string EXEC()
+    public MultiState EXEC()
     {
-        if(multiState == false) return "EXEC without MULTI";
-        return "OK";
+        if(multiState == MultiState.none) return multiState;
+        else if(multiState == MultiState.multi) 
+        {
+            multiState = MultiState.exec;
+            return multiState;
+        }
+        else
+        {
+            multiState = MultiState.none;
+            return multiState;
+        }
     }
 
 }

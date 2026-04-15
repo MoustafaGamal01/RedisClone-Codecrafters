@@ -24,7 +24,12 @@ namespace codecrafters_redis.src.Commands
         {
             var result = _store.EXEC(); 
 
-            await RespWriter.WriteError(stream, result);
+            if(result == Store.MultiState.exec)
+            {
+                await RespWriter.WriteArray(stream, new List<string>());
+            }
+            else
+                if(Store.MultiState.none == result) await RespWriter.WriteError(stream, "EXEC without MULTI");
         }
     }
 }

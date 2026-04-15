@@ -4,6 +4,7 @@ using codecrafters_redis.src.Core;
 using codecrafters_redis.src.IRepository;
 using codecrafters_redis.src.Protocol;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 
 public class CommandHandler
 {
@@ -42,31 +43,40 @@ public class CommandHandler
 
         var command = parts[0].ToUpper();
 
-        if (Store.multiState == true)
+        if (Store.multiState == Store.MultiState.multi)
         {
-            _commandQueue.Enqueue(parts);
-            return;
-        }
-        else if (Store.multiState == false && _commandQueue.Count == 0)
-        {
-            if (_handlers.TryGetValue(command, out var handler))
-                await handler.Handle(stream, parts);
-            else
-                await RespWriter.WriteError(stream, $"Unknown command '{command}'");
-        }
-        else
-        {
-            // Process queued commands
-            while (_commandQueue.Count > 0)
+            if (command == "EXEC")
             {
-                var queuedParts = _commandQueue.Dequeue();
-                var queuedCommand = queuedParts[0].ToUpper();
-                if (_handlers.TryGetValue(queuedCommand, out var queuedHandler))
-                    await queuedHandler.Handle(stream, queuedParts);
+                if (_commandQueue.Count > 0)
+                {
+                    while (_commandQueue.Count > 0)
+                    {
+                        var queuedParts = _commandQueue.Dequeue();
+                        var queuedCommand = queuedParts[0].ToUpper();
+                        if (_handlers.TryGetValue(queuedCommand, out var queuedHandler))
+                            await queuedHandler.Handle(stream, queuedParts);
+                        else
+                            await RespWriter.WriteError(stream, $"Unknown command '{queuedCommand}'");
+                    }
+                }
                 else
-                    await RespWriter.WriteError(stream, $"Unknown command '{queuedCommand}'");
+                {
+                    if (_handlers.TryGetValue(command, out var handlerr))
+                        await handlerr.Handle(stream, parts);
+                    else
+                        await RespWriter.WriteError(stream, $"Unknown command '{command}'");
+                }
             }
-        }
+            else
+            {
+                _commandQueue.Enqueue(parts);
+                return;
+            }
+        } 
+        if (_handlers.TryGetValue(command, out var handler))
+            await handler.Handle(stream, parts);
+        else
+            await RespWriter.WriteError(stream, $"Unknown command '{command}'");
     }
 
 }

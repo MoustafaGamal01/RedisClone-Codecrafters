@@ -27,7 +27,6 @@ namespace codecrafters_redis.src.Core
             {
                 var bytesRead = await stream.ReadAsync(buffer);
                 if (bytesRead == 0) break;
-
                 var request = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                 var parts = RespParser.Parse(request); 
                 await _dispatcher.Dispatch(stream, parts);

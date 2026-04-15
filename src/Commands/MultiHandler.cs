@@ -19,9 +19,8 @@ namespace codecrafters_redis.src.Commands
 
         public async Task Handle(NetworkStream stream, List<string> parts)
         {
-            var result = _store.MULTI(); 
-        
-            await RespWriter.WriteSimpleString(stream, result);
+            _store.MULTI(); 
+            await RespWriter.WriteSimpleString(stream, "OK");
         }
     }
 }
