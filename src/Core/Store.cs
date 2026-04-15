@@ -384,16 +384,17 @@ XRead(List<string> keys, List<string> ids, int blockMs)
     {
         var entry = GetOrCreate<RedisString>(key);
 
+        // If the key is new, initialize it to "1"
         if (entry.type == null)
         {
             entry.type = "1";
             return (true, 1);
         }
 
+
         int number = 0;
-
         var success = int.TryParse(entry.type, out number);
-
+        // If the current value is a valid integer
         if (success)
         {
             number++;
@@ -402,4 +403,10 @@ XRead(List<string> keys, List<string> ids, int blockMs)
 
         return (success, number);
     }
+
+    public string MULTI()
+    {
+        return "OK";
+    }
+
 }
