@@ -2,6 +2,7 @@ namespace codecrafters_redis.src.Core;
 
 using codecrafters_redis.src.Redis;
 using System.Collections.Concurrent;
+using System.Reflection.Metadata.Ecma335;
 
 public class Store
 {
@@ -379,17 +380,26 @@ XRead(List<string> keys, List<string> ids, int blockMs)
         };
     }
 
-    public int INCR(string key)
+    public (bool, int) INCR(string key)
     {
-        // always key exists logic
         var entry = GetOrCreate<RedisString>(key);
 
-        var number = entry.type == null ? 0 : int.Parse(entry.type);
+        if (entry.type == null)
+        {
+            entry.type = "1";
+            return (true, 1);
+        }
 
-        number++;
+        int number = 0;
 
-        entry.type = number.ToString();
+        var success = int.TryParse(entry.type, out number);
 
-        return number;
+        if (success)
+        {
+            number++;
+            entry.type = number.ToString();
+        }
+
+        return (success, number);
     }
 }

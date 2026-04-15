@@ -22,9 +22,13 @@ namespace codecrafters_redis.src.Commands
         {
             var result = _store.INCR(parts[1]);
 
-            await RespWriter.WriteInteger(stream, result);
+            if(result.Item1 == false)
+            {
+                await RespWriter.WriteError(stream, "value is not an integer or out of range");
+                return;
+            }
 
+            await RespWriter.WriteInteger(stream, result.Item2);
         }
-
     }
 }
