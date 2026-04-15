@@ -2,6 +2,7 @@ namespace codecrafters_redis.src.Core;
 
 using codecrafters_redis.src.Redis;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Reflection.Metadata.Ecma335;
 
 public class Store
@@ -10,6 +11,8 @@ public class Store
     private readonly ConcurrentDictionary<string, Queue<TaskCompletionSource<string>>> _waiters = new();
     private readonly ConcurrentDictionary<string, List<TaskCompletionSource<bool>>> _streamWaiters = new();
     private readonly object _lock = new();
+    public static bool multiState = false;
+
     public void Set(string key, string value, DateTime? expiresAt = null)
     {
         _store[key] = new RedisString { type = value, ExpiresAt = expiresAt };
@@ -178,7 +181,7 @@ public class Store
     }
 
     public async Task<List<(string StreamKey, List<(string Id, Dictionary<string, string> Fields)> Entries)>>
-XRead(List<string> keys, List<string> ids, int blockMs)
+        XRead(List<string> keys, List<string> ids, int blockMs)
     {
         for (int i = 0; i < ids.Count; i++)
         {
@@ -406,6 +409,13 @@ XRead(List<string> keys, List<string> ids, int blockMs)
 
     public string MULTI()
     {
+        multiState = true;  
+        return "OK";
+    }
+
+    public string EXEC()
+    {
+        if(multiState == false) return "EXEC without MULTI";
         return "OK";
     }
 
