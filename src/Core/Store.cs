@@ -179,10 +179,6 @@ public class Store
     public async Task<List<(string StreamKey, List<(string Id, Dictionary<string, string> Fields)> Entries)>>
 XRead(List<string> keys, List<string> ids, int blockMs)
     {
-        // =========================
-        // STEP 1: SNAPSHOT RESOLVE
-        // =========================
-        // If ID is "$", we freeze it to "current last entry"
         for (int i = 0; i < ids.Count; i++)
         {
             if (ids[i] == "$")
@@ -195,15 +191,11 @@ XRead(List<string> keys, List<string> ids, int blockMs)
                 }
                 else
                 {
-                    // empty stream → behave like "0-0"
                     ids[i] = "0-0";
                 }
             }
         }
 
-        // =========================
-        // STEP 2: TRY READ FIRST
-        // =========================
         var result = ReadAvailable(keys, ids);
 
         if (result.Count > 0)
@@ -213,9 +205,6 @@ XRead(List<string> keys, List<string> ids, int blockMs)
         if (blockMs < 0)
             return new();
 
-        // =========================
-        // STEP 3: REGISTER WAITERS (BLOCK)
-        // =========================
         var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         lock (_lock)
@@ -227,9 +216,6 @@ XRead(List<string> keys, List<string> ids, int blockMs)
             }
         }
 
-        // =========================
-        // STEP 4: WAIT (BLOCK OR TIMEOUT)
-        // =========================
         Task completed;
 
         if (blockMs == 0)
@@ -251,9 +237,6 @@ XRead(List<string> keys, List<string> ids, int blockMs)
 
         RemoveWaiter(tcs, keys);
 
-        // =========================
-        // STEP 5: RETURN NEW DATA AFTER WAKE
-        // =========================
         return ReadAvailable(keys, ids);
     }
 
@@ -408,5 +391,19 @@ XRead(List<string> keys, List<string> ids, int blockMs)
             RedisStream => "stream",
             _ => "unknown"
         };
+    }
+
+    public int INCR(string key)
+    {
+        // always key exists logic
+        var entry = GetOrCreate<RedisString>(key);
+
+        var number = entry.type == null ? 0 : int.Parse(entry.type);
+
+        number++;
+
+        entry.type = number.ToString();
+
+        return number;
     }
 }

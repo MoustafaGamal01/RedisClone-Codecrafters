@@ -21,6 +21,7 @@ namespace codecrafters_redis.src.Commands
         TYPE,
         XADD,
         XRANGE,
-        XREAD
+        XREAD,
+        INCR
     }
 }
