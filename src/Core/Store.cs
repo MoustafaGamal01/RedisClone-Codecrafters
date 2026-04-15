@@ -269,20 +269,6 @@ XRead(List<string> keys, List<string> ids, int blockMs)
         return result;
     }
 
-    private Task<bool> WaitForStreamAsync(string key)
-    {
-        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        var list = _streamWaiters.GetOrAdd(key, _ => new List<TaskCompletionSource<bool>>());
-
-        lock (list)
-        {
-            list.Add(tcs);
-        }
-
-        return tcs.Task;
-    }
-
     private void NotifyStreamWaiters(string key)
     {
         if (!_streamWaiters.TryGetValue(key, out var list)) return;
