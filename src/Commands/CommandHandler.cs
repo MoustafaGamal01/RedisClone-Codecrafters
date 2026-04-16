@@ -9,7 +9,6 @@ using System.Runtime.CompilerServices;
 public class CommandHandler
 {
     private readonly Dictionary<string, ICommandHandler> _handlers;
-    private readonly Queue<List<string>> _commandQueue = new();
 
     public CommandHandler(Store store)
     {
@@ -30,49 +29,58 @@ public class CommandHandler
             new XRangeHandler(store),
             new XReadHandler(store),
             new IncrHandler(store),
-            new MultiHandler(store),
-            new ExecHandler(store),
         };
 
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());
     }
 
-    public async Task Dispatch(NetworkStream stream, List<string> parts)
+    public async Task Dispatch(NetworkStream stream, List<string> parts, ClientContext context)
     {
         if (parts.Count == 0) { await RespWriter.WriteError(stream, "Empty command"); return; }
 
         var command = parts[0].ToUpper();
 
-        if (Store.multiState == Store.MultiState.multi)
+        if (command == "MULTI")
         {
-            if (command == "EXEC")
+            context.IsInTransaction = true;
+            context.CommandQueue.Clear();
+            await RespWriter.WriteSimpleString(stream, "OK");
+            return;
+        }
+
+        if (command == "EXEC")
+        {
+            if (!context.IsInTransaction)
             {
-                if (_commandQueue.Count > 0)
-                {
-                    while (_commandQueue.Count > 0)
-                    {
-                        var queuedParts = _commandQueue.Dequeue();
-                        var queuedCommand = queuedParts[0].ToUpper();
-                        if (_handlers.TryGetValue(queuedCommand, out var queuedHandler))
-                            await queuedHandler.Handle(stream, queuedParts);
-                        else
-                            await RespWriter.WriteError(stream, $"Unknown command '{queuedCommand}'");
-                    }
-                }
-                else
-                {
-                    if (_handlers.TryGetValue(command, out var handlerr))
-                        await handlerr.Handle(stream, parts);
-                    else
-                        await RespWriter.WriteError(stream, $"Unknown command '{command}'");
-                }
-            }
-            else
-            {
-                _commandQueue.Enqueue(parts);
+                await RespWriter.WriteError(stream, "EXEC without MULTI");
                 return;
             }
-        } 
+
+            var queued = context.CommandQueue.ToList();
+            context.CommandQueue.Clear();
+            context.IsInTransaction = false;
+
+            await RespWriter.WriteArrayHeader(stream, queued.Count);
+
+            foreach (var queuedParts in queued)
+            {
+                var queuedCommand = queuedParts[0].ToUpper();
+                if (_handlers.TryGetValue(queuedCommand, out var queuedHandler))
+                    await queuedHandler.Handle(stream, queuedParts);
+                else
+                    await RespWriter.WriteError(stream, $"Unknown command '{queuedCommand}'");
+            }
+
+            return;
+        }
+
+        if (context.IsInTransaction)
+        {
+            context.CommandQueue.Enqueue(parts);
+            await RespWriter.WriteSimpleString(stream, "QUEUED");
+            return;
+        }
+
         if (_handlers.TryGetValue(command, out var handler))
             await handler.Handle(stream, parts);
         else

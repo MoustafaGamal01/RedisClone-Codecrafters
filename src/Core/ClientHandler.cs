@@ -22,6 +22,7 @@ namespace codecrafters_redis.src.Core
         {
             using var stream = client.GetStream();
             var buffer = new byte[4096];
+            var context = new ClientContext();
 
             while (true)
             {
@@ -29,7 +30,7 @@ namespace codecrafters_redis.src.Core
                 if (bytesRead == 0) break;
                 var request = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                 var parts = RespParser.Parse(request); 
-                await _dispatcher.Dispatch(stream, parts);
+                await _dispatcher.Dispatch(stream, parts, context);
             }
         }
     }

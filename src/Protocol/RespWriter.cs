@@ -47,6 +47,12 @@ public static class RespWriter
         await stream.WriteAsync(bytes);
     }
 
+    public static async Task WriteArrayHeader(NetworkStream stream, int count)
+    {
+        var bytes = Encoding.UTF8.GetBytes($"*{count}\r\n");
+        await stream.WriteAsync(bytes);
+    }
+
     public static async Task WriteEmptyArray(NetworkStream stream)
     {
         var message = "*0\r\n";
