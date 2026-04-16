@@ -130,4 +130,4 @@ public static class RespWriter
         await stream.WriteAsync(data, 0, data.Length);
     }
 
-}
+} /**/
