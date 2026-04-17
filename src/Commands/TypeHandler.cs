@@ -1,4 +1,4 @@
-﻿using codecrafters_redis.src.Core;
+using codecrafters_redis.src.Core;
 using codecrafters_redis.src.IRepository;
 using codecrafters_redis.src.Protocol;
 using System.Net.Sockets;
@@ -15,7 +15,7 @@ internal class TypeHandler : ICommandHandler
 
     public CommandsName CommandName => CommandsName.TYPE;
 
-    public async Task Handle(NetworkStream stream, List<string> parts)
+    public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
         string? key = parts[1];
 

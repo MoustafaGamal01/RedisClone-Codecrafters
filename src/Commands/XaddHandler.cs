@@ -1,4 +1,4 @@
-﻿using codecrafters_redis.src.Core;
+using codecrafters_redis.src.Core;
 using codecrafters_redis.src.IRepository;
 using codecrafters_redis.src.Protocol;
 using System.Net.Sockets;
@@ -15,7 +15,7 @@ internal class XaddHandler : ICommandHandler
 
     public CommandsName CommandName => CommandsName.XADD;
 
-    public async Task Handle(NetworkStream stream, List<string> parts)
+    public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
         var key = parts[1];
         var id = parts[2];

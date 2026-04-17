@@ -1,4 +1,4 @@
-﻿using codecrafters_redis.src.Core;
+using codecrafters_redis.src.Core;
 using codecrafters_redis.src.IRepository;
 using codecrafters_redis.src.Protocol;
 using System.Net.Sockets;
@@ -14,7 +14,7 @@ internal class GetHandler : ICommandHandler
         _store = store;
     }
     
-    public async Task Handle(NetworkStream stream, List<string> parts)
+    public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
         if (parts.Count < 2)
         {

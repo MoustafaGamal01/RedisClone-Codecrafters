@@ -1,4 +1,4 @@
-﻿using codecrafters_redis.src.Core;
+using codecrafters_redis.src.Core;
 using codecrafters_redis.src.IRepository;
 using codecrafters_redis.src.Protocol;
 using System.Net.Sockets;
@@ -16,7 +16,7 @@ internal class XReadHandler : ICommandHandler
 
     public CommandsName CommandName => CommandsName.XREAD;
 
-    public async Task Handle(NetworkStream stream, List<string> parts)
+    public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
         int blockMs = -1;
         int index = 1;

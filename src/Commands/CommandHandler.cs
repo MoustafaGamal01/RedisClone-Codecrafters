@@ -28,6 +28,8 @@ public class CommandHandler
             new XRangeHandler(store),
             new XReadHandler(store),
             new IncrHandler(store),
+            new MultiHandler(),
+            new ExecHandler(this)
         };
 
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());
@@ -39,41 +41,7 @@ public class CommandHandler
 
         var command = parts[0].ToUpper();
 
-        if (command == "MULTI")
-        {
-            context.IsInTransaction = true;
-            context.CommandQueue.Clear();
-            await RespWriter.WriteSimpleString(stream, "OK");
-            return;
-        }
-
-        if (command == "EXEC")
-        {
-            if (!context.IsInTransaction)
-            {
-                await RespWriter.WriteError(stream, "EXEC without MULTI");
-                return;
-            }
-
-            var queued = context.CommandQueue.ToList();
-            context.CommandQueue.Clear();
-            context.IsInTransaction = false;
-
-            await RespWriter.WriteArrayHeader(stream, queued.Count);
-
-            foreach (var queuedParts in queued)
-            {
-                var queuedCommand = queuedParts[0].ToUpper();
-                if (_handlers.TryGetValue(queuedCommand, out var queuedHandler))
-                    await queuedHandler.Handle(stream, queuedParts);
-                else
-                    await RespWriter.WriteError(stream, $"Unknown command '{queuedCommand}'");
-            }
-
-            return;
-        }
-
-        if (context.IsInTransaction)
+        if (context.IsInTransaction && command != "EXEC" && command != "DISCARD")
         {
             context.CommandQueue.Enqueue(parts);
             await RespWriter.WriteSimpleString(stream, "QUEUED");
@@ -81,7 +49,7 @@ public class CommandHandler
         }
 
         if (_handlers.TryGetValue(command, out var handler))
-            await handler.Handle(stream, parts);
+            await handler.Handle(stream, parts, context);
         else
             await RespWriter.WriteError(stream, $"Unknown command '{command}'");
     }

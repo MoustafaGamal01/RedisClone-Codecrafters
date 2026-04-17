@@ -1,4 +1,4 @@
-﻿using codecrafters_redis.src.Core;
+using codecrafters_redis.src.Core;
 using codecrafters_redis.src.IRepository;
 using codecrafters_redis.src.Protocol;
 using System.Net.Sockets;
@@ -14,7 +14,7 @@ internal class LPopHandler : ICommandHandler
         _store = store;
     }
 
-    public async Task Handle(NetworkStream stream, List<string> parts)
+    public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
         var value = _store.LPOP(parts);
         if (value is null)

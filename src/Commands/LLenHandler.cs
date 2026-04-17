@@ -1,4 +1,4 @@
-﻿using codecrafters_redis.src.Core;
+using codecrafters_redis.src.Core;
 using codecrafters_redis.src.IRepository;
 using codecrafters_redis.src.Protocol;
 using System.Net.Sockets;
@@ -15,7 +15,7 @@ internal class LLenHandler : ICommandHandler
 
     public CommandsName CommandName => CommandsName.LLEN;
 
-    public async Task Handle(NetworkStream stream, List<string> parts)
+    public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
         var size = _store.LLEN(parts);
         await RespWriter.WriteInteger(stream, size);

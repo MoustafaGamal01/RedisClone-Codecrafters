@@ -1,4 +1,4 @@
-﻿using codecrafters_redis.src.Core;
+using codecrafters_redis.src.Core;
 using codecrafters_redis.src.IRepository;
 using codecrafters_redis.src.Protocol;
 using System.Net.Sockets;
@@ -13,7 +13,7 @@ internal class IncrHandler : ICommandHandler
         _store = store;
     }
     public CommandsName CommandName => CommandsName.INCR;
-    public async Task Handle(NetworkStream stream, List<string> parts)
+    public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
         var result = _store.INCR(parts[1]);
 
