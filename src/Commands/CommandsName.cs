@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+namespace codecrafters_redis.src.Commands;
 
-namespace codecrafters_redis.src.Commands
+public enum CommandsName
 {
-    public enum CommandsName
-    {
         PING,
         ECHO,
         SET,
@@ -22,8 +16,5 @@ namespace codecrafters_redis.src.Commands
         XADD,
         XRANGE,
         XREAD,
-        INCR,
-        MULTI,
-        EXEC,
-    }
+    INCR
 }

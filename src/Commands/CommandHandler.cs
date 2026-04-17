@@ -4,7 +4,6 @@ using codecrafters_redis.src.Core;
 using codecrafters_redis.src.IRepository;
 using codecrafters_redis.src.Protocol;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 
 public class CommandHandler
 {
