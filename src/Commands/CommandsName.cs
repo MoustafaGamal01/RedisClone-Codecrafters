@@ -18,5 +18,6 @@ public enum CommandsName
         XREAD,
         INCR,
         MULTI,
-        EXEC
+        EXEC,
+    DISCARD
 }
