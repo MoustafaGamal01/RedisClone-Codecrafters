@@ -1,8 +1,8 @@
-[![progress-banner](https://backend.codecrafters.io/progress/redis/5ab46378-9363-41ac-a459-bd1b264393bc)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# RedisSharp 
 
-# RedisSharp
+[![Progress](https://backend.codecrafters.io/progress/redis/5ab46378-9363-41ac-a459-bd1b264393bc)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
 
-A Redis-compatible in-memory data store built from scratch in C# as part of the [CodeCrafters "Build Your Own Redis"](https://codecrafters.io/challenges/redis) challenge. Implements the RESP2 protocol over raw TCP, concurrent client handling via async/await, full string and list commands, TTL expiry, and blocking operations.
+A Redis-compatible in-memory data store built from scratch in C# as part of the [CodeCrafters "Build Your Own Redis"](https://codecrafters.io/challenges/redis) challenge. Implements the RESP2 protocol over raw TCP, concurrent client handling, full data structure commands, Redis Streams, and ACID-like transactions — without any Redis libraries.
 
 ---
 
@@ -10,30 +10,42 @@ A Redis-compatible in-memory data store built from scratch in C# as part of the 
 
 ```
 RedisSharp/
-├── Program.cs
+├── Program.cs                   → TCP listener loop, accepts clients, spawns tasks
 ├── Core/
-│   ├── Store.cs
-│   ├── RedisValue.cs       ← base class + RedisString + RedisList
-│   └── ClientHandler.cs
+│   ├── Store.cs                 → Unified thread-safe in-memory store
+│   ├── RedisValue.cs            → Abstract base with expiry logic
+│   ├── RedisString.cs           → String value type
+│   ├── RedisList.cs             → List value type
+│   └── RedisStream.cs           → Stream value type
+|   └── ClientContext.cs
+|   └── ClientHandler.cs 
 ├── Protocol/
-│   ├── RespParser.cs
-│   └── RespWriter.cs
+│   ├── RespParser.cs            → Parses raw RESP2 bytes into string parts
+│   └── RespWriter.cs            → Encodes and writes all RESP2 response types
 └── Commands/
-    ├── ICommandHandler.cs
-    ├── CommandDispatcher.cs
-    ├── PingCommand.cs
-    ├── EchoCommand.cs
-    ├── SetCommand.cs
-    ├── GetCommand.cs
-    ├── RpushCommand.cs
-    ├── LpushCommand.cs
-    ├── LrangeCommand.cs
-    ├── LpopCommand.cs
-    └── BlpopCommand.cs
-
+    ├── ICommandHandler.cs       → Interface: CommandName + Handle()
+    ├── CommandDispatcher.cs     → Routes commands, manages per-connection transaction state
+    ├── PingHandler.cs
+    ├── EchoHandler.cs
+    ├── SetHandler.cs
+    ├── GetHandler.cs
+    ├── IncrHandler.cs
+    ├── TypeHandler.cs
+    ├── RPushHandler.cs
+    ├── LPushHandler.cs
+    ├── LRangeHandler.cs
+    ├── LPopHandler.cs
+    ├── LLenHandler.cs
+    ├── BLPopHandler.cs
+    ├── XAddHandler.cs
+    ├── XRangeHandler.cs
+    ├── XReadHandler.cs
+    ├── MultiHandler.cs
+    ├── ExecHandler.cs
+    └── DiscardHandler.cs
 ```
 
-Each client connection runs on its own `Task`, allowing the server to handle multiple concurrent clients without blocking the main loop.
+Each client connection gets its own `Task` and its own `CommandDispatcher` instance — ensuring transaction state is never shared between connections.
 
 ---
 
@@ -47,6 +59,8 @@ Each client connection runs on its own `Task`, allowing the server to handle mul
 | `ECHO` | `ECHO <message>` | Returns the message back |
 | `SET` | `SET <key> <value> [EX seconds\|PX milliseconds]` | Sets a key with optional expiry |
 | `GET` | `GET <key>` | Returns the value, or nil if expired/missing |
+| `INCR` | `INCR <key>` | Atomically increments an integer value |
+| `TYPE` | `TYPE <key>` | Returns the type of the value at a key |
 
 ### Lists
 
@@ -54,10 +68,26 @@ Each client connection runs on its own `Task`, allowing the server to handle mul
 |---------|--------|-------------|
 | `RPUSH` | `RPUSH <key> <value> [value ...]` | Appends one or more elements to the tail |
 | `LPUSH` | `LPUSH <key> <value> [value ...]` | Prepends one or more elements to the head |
-| `LRANGE` | `LRANGE <key> <start> <stop>` | Returns elements in index range (supports negative indices) |
+| `LRANGE` | `LRANGE <key> <start> <stop>` | Returns elements in range (supports negative indices) |
 | `LLEN` | `LLEN <key>` | Returns the length of the list |
 | `LPOP` | `LPOP <key> [count]` | Removes and returns elements from the head |
-| `BLPOP` | `BLPOP <key> <timeout>` | Blocking pop — waits until an element is available or timeout expires |
+| `BLPOP` | `BLPOP <key> <timeout>` | Blocking pop — waits until element available or timeout |
+
+### Streams
+
+| Command | Syntax | Description |
+|---------|--------|-------------|
+| `XADD` | `XADD <key> <id\|*> <field> <value> ...` | Appends entry with auto or manual ID |
+| `XRANGE` | `XRANGE <key> <start> <end>` | Returns entries in ID range (`-` and `+` supported) |
+| `XREAD` | `XREAD [BLOCK ms] STREAMS <key> [key ...] <id> [id ...]` | Reads from one or more streams, optionally blocking |
+
+### Transactions
+
+| Command | Syntax | Description |
+|---------|--------|-------------|
+| `MULTI` | `MULTI` | Starts a transaction block |
+| `EXEC` | `EXEC` | Executes all queued commands atomically |
+| `DISCARD` | `DISCARD` | Discards all queued commands and exits transaction |
 
 ---
 
@@ -65,77 +95,82 @@ Each client connection runs on its own `Task`, allowing the server to handle mul
 
 ### RESP2 Protocol
 
-Redis clients communicate using the **Redis Serialization Protocol (RESP2)**. Every command is sent as an array of bulk strings:
+Every Redis command is sent as an array of bulk strings:
 
 ```
-SET foo bar
-→ *3\r\n$3\r\nSET\r\n$3\r\nfoo\r\n$3\r\nbar\r\n
+SET foo bar  →  *3\r\n$3\r\nSET\r\n$3\r\nfoo\r\n$3\r\nbar\r\n
 ```
 
-`RespParser` strips the `*` (array) and `$` (length) lines, leaving just the command parts: `["SET", "foo", "bar"]`.
+`RespParser` strips the `*` and `$` framing, leaving `["SET", "foo", "bar"]`. `RespWriter` handles all response types: simple strings, bulk strings, null bulk strings, integers, arrays, nested arrays, and null arrays.
 
-### Concurrency
+### Concurrency & Per-Connection State
 
 ```
 Main loop
- └── AcceptTcpClientAsync()   ← blocks until a client connects
-      └── Task.Run()          ← each client gets its own async task
-           └── ReadAsync loop ← reads commands, writes responses
+ └── AcceptTcpClientAsync()
+      └── Task.Run()              ← one task per client
+           └── new CommandDispatcher()   ← one dispatcher per client
+                └── ReadAsync loop
 ```
 
-`Store` uses `ConcurrentDictionary` to ensure thread-safe reads and writes across all client tasks.
+Each client gets its own `CommandDispatcher` instance. Transaction state (`MULTI`/`EXEC`) lives inside the dispatcher, never in the shared `Store` — so one client's transaction never affects another.
 
 ### Unified Type Store (Strategy Pattern)
-
-All Redis value types share a single dictionary:
 
 ```csharp
 ConcurrentDictionary<string, RedisValue> _store
 ```
 
-`RedisValue` is an abstract base class. `RedisString` and `RedisList` extend it, each carrying their own data. Store retrieves a `RedisValue` and casts to the specific type only where needed — adding a new type like `RedisHash` requires zero changes to the dictionary logic.
+`RedisValue` is an abstract base. `RedisString`, `RedisList`, and `RedisStream` extend it. Store retrieves a `RedisValue` and pattern-matches to the specific type. Adding new types requires zero changes to the dictionary logic.
 
 ```
-RedisValue (abstract)
- ├── RedisString  → string Value
- └── RedisList    → List<string> Items
+RedisValue (abstract, has IsExpired)
+ ├── RedisString   → string Value
+ ├── RedisList     → List<string> Items
+ └── RedisStream   → List<(string Id, Dictionary<string,string> Fields)> Entries
 ```
 
-### TTL / Expiry
+### TTL / Expiry (Lazy)
 
-Expiry uses **lazy expiry** — the expiry timestamp is stored at `SET` time and checked on every `GET`. Expired keys are removed on access.
+Expiry timestamps are stored at `SET` time. On every `GET`, if `DateTime.UtcNow > ExpiresAt`, the key is removed and nil is returned. No background thread needed.
 
-```
-SET foo bar PX 2000
-→ stored as RedisString { Value="bar", ExpiresAt=UtcNow+2000ms }
+### Blocking Operations
 
-GET foo  (after 3 seconds)
-→ IsExpired = true → remove key → return $-1\r\n (nil)
-```
-
-### Blocking Operations (BLPOP)
-
-`BLPOP` uses `TaskCompletionSource<string>` to suspend a client task without blocking the thread, then wake it up when `RPUSH` adds a value.
+Both `BLPOP` and `XREAD BLOCK` use `TaskCompletionSource` for zero-CPU suspension:
 
 ```
-BLPOP arrives → list empty?
-  YES → create TCS → store in waiters queue → await tcs.Task  (suspended)
-  NO  → pop immediately and return
+Client calls BLPOP / XREAD BLOCK
+  → list/stream empty → create TCS → store in waiters dict → await tcs.Task
 
-RPUSH arrives → waiters queue for this key?
-  YES → dequeue oldest TCS → tcs.SetResult(value)  (wakes up BLPOP client)
-  NO  → add to list normally
+RPUSH / XADD arrives
+  → check waiters dict → dequeue TCS → tcs.SetResult(value) → waiter resumes instantly
 ```
 
-Timeout is handled by racing `tcs.Task` against `Task.Delay` using `Task.WhenAny`:
+Timeout is handled with `Task.WhenAny(tcs.Task, Task.Delay(timeout))`.
 
-```csharp
-var winner = await Task.WhenAny(waitTask, Task.Delay(TimeSpan.FromSeconds(timeout)));
-// timeout won → return *-1\r\n
-// waitTask won → return ["key", "value"]
+### Redis Streams (XADD / XRANGE / XREAD)
+
+- Entry IDs are `<milliseconds>-<sequence>` pairs with strict ordering enforcement
+- `*` in the sequence position auto-generates the next sequence number
+- Full `*` ID uses current Unix timestamp with auto sequence
+- `XRANGE` supports `-` (first entry) and `+` (last entry) as bounds
+- `XREAD BLOCK` with `$` as ID reads only entries added after the command was issued
+
+### Transactions (MULTI / EXEC / DISCARD)
+
+```
+MULTI  → dispatcher enters queuing mode, returns OK
+<cmd>  → command is queued, returns QUEUED (not executed)
+EXEC   → all queued commands execute in order, returns array of results
+DISCARD → queue is cleared, transaction mode exits, returns OK
 ```
 
-Multiple clients blocking on the same key are served in FIFO order — the one waiting longest gets the value first.
+Key design decision: transaction state and the command queue live in `CommandDispatcher`, not `Store`. This guarantees per-connection isolation — a requirement for correctness in a concurrent server.
+
+Error handling inside transactions:
+- `EXEC` without `MULTI` → returns error
+- `MULTI` inside `MULTI` → returns error (no nesting)
+- Command errors inside a transaction execute and return their individual errors without aborting the rest
 
 ---
 
@@ -145,35 +180,33 @@ Multiple clients blocking on the same key are served in FIFO order — the one w
 dotnet run
 ```
 
-The server starts on port `6379`. Test it with `redis-cli`:
-
 ```bash
 # Strings
 redis-cli PING
-redis-cli SET foo bar
+redis-cli SET foo bar EX 10
 redis-cli GET foo
-redis-cli SET temp value PX 2000
-# wait 3 seconds...
-redis-cli GET temp        # (nil)
+redis-cli INCR counter
 
 # Lists
 redis-cli RPUSH mylist a b c
 redis-cli LRANGE mylist 0 -1
-redis-cli LPUSH mylist z
-redis-cli LLEN mylist
-redis-cli LPOP mylist
-redis-cli LPOP mylist 2
+redis-cli BLPOP mylist 5
 
-# Blocking
-# Terminal 1:
-redis-cli BLPOP mylist 0
-# Terminal 2:
-redis-cli RPUSH mylist hello
-# Terminal 1 immediately prints: 1) "mylist"  2) "hello"
+# Streams
+redis-cli XADD mystream '*' name Sara surname Sanfilippo
+redis-cli XRANGE mystream - +
+redis-cli XREAD STREAMS mystream 0-0
 
-# Blocking with timeout:
-redis-cli BLPOP mylist 2
-# (nil) after 2 seconds if nothing pushed
+# Transactions
+redis-cli MULTI
+redis-cli SET foo bar
+redis-cli INCR counter
+redis-cli EXEC
+
+# Discard
+redis-cli MULTI
+redis-cli SET foo bar
+redis-cli DISCARD
 ```
 
 ---
@@ -181,47 +214,67 @@ redis-cli BLPOP mylist 2
 ## Stages Completed
 
 ### Core
-- [x] TCP server — accepts a single connection
-- [x] Handle multiple PING commands on one connection
-- [x] Concurrent clients via `Task.Run`
-- [x] ECHO command with RESP parsing
-- [x] SET and GET commands
-- [x] TTL expiry with EX and PX options
+- [x] TCP server + PING
+- [x] Multiple commands per connection
+- [x] Concurrent clients
+- [x] ECHO
+- [x] SET / GET
+- [x] TTL expiry (EX / PX)
 
 ### Lists
-- [x] RPUSH — create list and append elements
-- [x] RPUSH — append multiple elements
-- [x] LRANGE — positive index slicing
-- [x] LRANGE — negative index slicing
-- [x] LPUSH — prepend elements
-- [x] LLEN — query list length
-- [x] LPOP — remove single element
-- [x] LPOP — remove multiple elements
-- [x] BLPOP — blocking retrieval (indefinite wait)
-- [x] BLPOP — blocking retrieval with timeout
+- [x] RPUSH (single + multiple elements)
+- [x] LRANGE (positive + negative indices)
+- [x] LPUSH
+- [x] LLEN
+- [x] LPOP (single + multiple)
+- [x] BLPOP (indefinite + timeout)
+
+### Streams
+- [x] TYPE command
+- [x] XADD (create stream, validate IDs)
+- [x] Partial auto-generated IDs
+- [x] Fully auto-generated IDs
+- [x] XRANGE (with `-` / `+` bounds)
+- [x] XREAD (single + multiple streams)
+- [x] XREAD BLOCK (blocking + timeout + `$` cursor)
+
+### Transactions
+- [x] INCR (1/3, 2/3, 3/3)
+- [x] MULTI
+- [x] EXEC
+- [x] Empty transaction
+- [x] Queueing commands
+- [x] Executing a transaction
+- [x] DISCARD
+- [x] Failures within transactions
+- [x] Multiple transactions
 
 ---
 
 ## Design Decisions
 
-**Why `TaskCompletionSource` for BLPOP?**
-A busy-wait loop (`while list.Empty sleep`) would hold a thread hostage. `TaskCompletionSource` suspends the task at zero CPU cost and wakes it instantly when signaled — the correct async pattern for event-driven coordination.
+**Per-connection `CommandDispatcher` instead of global transaction state**
+Redis transactions are connection-scoped. Using a `static` field on `Store` for transaction state would cause Client 1's `MULTI` to affect Client 2 — a correctness bug under concurrency. Each `Task.Run` creates a fresh `CommandDispatcher`, isolating state completely.
 
-**Why a unified `_store` dictionary?**
-Real Redis has a single keyspace — you can't `SET` and `LPUSH` to the same key simultaneously. Separate dictionaries would allow that inconsistency. The unified store with typed `RedisValue` objects enforces correct behavior and makes adding new types (Hashes, Sets) a one-file change.
+**`TaskCompletionSource` for blocking commands**
+Polling with `Task.Delay` in a loop wastes CPU and adds latency. `TaskCompletionSource` suspends the task at zero CPU cost and wakes it the instant a value is available — same mechanism used by .NET's own async I/O primitives.
 
-**Why lazy expiry?**
-A background expiry thread adds complexity and threading risk for marginal gain at this scale. Checking on read is simpler, correct, and is actually how Redis handles it for most keys.
+**Unified `_store` with Strategy pattern**
+One dictionary, typed values. Adding a new Redis type (Hashes, Sets) means creating one new class — no changes to Store's core lookup or dispatcher routing logic.
+
+**Lazy expiry over active expiry**
+A background sweeper thread adds complexity and concurrency risk. Redis itself uses lazy expiry as the primary mechanism (with occasional active sweeps for memory pressure). At this scale, checking on read is simpler and correct.
 
 ---
 
 ## What I Learned
 
-- How Redis clients and servers communicate at the byte level using RESP2
-- Building a raw TCP server in .NET with `TcpListener` and `NetworkStream`
-- Handling concurrent clients with `async/await` and `Task.Run`
-- Why `ConcurrentDictionary` is necessary for thread-safe shared state
-- `TaskCompletionSource<T>` for suspending and resuming tasks across concurrent clients
-- `Task.WhenAny` for racing async operations against a timeout
-- Strategy pattern — polymorphic value types behind a unified store interface
-- Lazy expiry: why checking on read is simpler and often good enough
+- RESP2 wire protocol at the byte level, including nested array encoding for Streams
+- Raw TCP server design with `TcpListener` and `NetworkStream` in .NET
+- `async/await` and `Task.Run` for concurrent client handling without thread-per-client overhead
+- `TaskCompletionSource<T>` for event-driven task suspension and resumption
+- `Task.WhenAny` for timeout racing
+- Strategy pattern with polymorphic `RedisValue` types behind a unified store
+- Why transaction state must be per-connection, not shared — and how to enforce that architecturally
+- Redis Streams entry ID semantics, auto-generation, and the `$` live cursor
+- Lazy expiry: simple, correct, and how real Redis works
