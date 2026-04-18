@@ -32,6 +32,7 @@ public class CommandHandler
             new ExecHandler(this, store),
             new DiscardHandler(),
             new WatchHandler(store),
+            new UnwatchHandler()
         };
 
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());
