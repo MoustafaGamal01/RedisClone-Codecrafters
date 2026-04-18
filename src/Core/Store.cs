@@ -54,10 +54,17 @@ public class Store
         for (int i = 2; i < parts.Count; i++)
             list.Items.Add(parts[i]);
 
-        // wake BLPOP
-        TryNotifyWaiter(key, list.Items.First());
+        int returnCount = list.Items.Count;
 
-        return list.Items.Count;
+        // wake BLPOP
+        while (list.Items.Count > 0 && TryNotifyWaiter(key, out var tcs))
+        {
+            var val = list.Items[0];
+            list.Items.RemoveAt(0);
+            tcs.TrySetResult(val);
+        }
+
+        return returnCount;
     }
 
     public int LPUSH(List<string> parts)
@@ -69,9 +76,16 @@ public class Store
         for (int i = 2; i < parts.Count; i++)
             list.Items.Insert(0, parts[i]);
 
-        TryNotifyWaiter(key, list.Items.First());
+        int returnCount = list.Items.Count;
 
-        return list.Items.Count;
+        while (list.Items.Count > 0 && TryNotifyWaiter(key, out var tcs))
+        {
+            var val = list.Items[0];
+            list.Items.RemoveAt(0);
+            tcs.TrySetResult(val);
+        }
+
+        return returnCount;
     }
 
     public List<string> LRANGE(List<string> parts, int start, int stop)
@@ -127,9 +141,9 @@ public class Store
         return result;
     }
 
-    public Task<string> BLPOP(string key)
+    public Task<string> BLPOP(string key, CancellationToken cancellationToken = default)
     {
-        var tcs = new TaskCompletionSource<string>();
+        var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         var queue = _waiters.GetOrAdd(key, _ => new Queue<TaskCompletionSource<string>>());
 
@@ -138,19 +152,31 @@ public class Store
             queue.Enqueue(tcs);
         }
 
+        if (cancellationToken.CanBeCanceled)
+        {
+            cancellationToken.Register(() => tcs.TrySetCanceled());
+        }
+
         return tcs.Task;
     }
 
-    public bool TryNotifyWaiter(string key, string value)
+    public bool TryNotifyWaiter(string key, out TaskCompletionSource<string>? tcs)
     {
+        tcs = null;
         if (!_waiters.TryGetValue(key, out var queue)) return false;
 
         lock (queue)
         {
-            if (queue.Count == 0) return false;
-
-            queue.Dequeue().TrySetResult(value);
-            return true;
+            while (queue.Count > 0)
+            {
+                var task = queue.Dequeue();
+                if (!task.Task.IsCompleted)
+                {
+                    tcs = task;
+                    return true;
+                }
+            }
+            return false;
         }
     }
 

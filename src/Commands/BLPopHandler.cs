@@ -33,7 +33,8 @@ internal class BLPopHandler : ICommandHandler
             return;
         }
 
-        var waitTask = _store.BLPOP(key);
+        var cts = new CancellationTokenSource();
+        var waitTask = _store.BLPOP(key, cts.Token);
 
         if (timeout == 0)
         {
@@ -47,6 +48,7 @@ internal class BLPopHandler : ICommandHandler
 
         if (winner == timeoutTask)
         {
+            cts.Cancel();
             await RespWriter.WriteNullArray(stream);
         }
         else

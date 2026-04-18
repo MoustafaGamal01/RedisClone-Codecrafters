@@ -25,12 +25,6 @@ internal class RPushHandler : ICommandHandler
 
         var key = parts[1];
 
-        if (_store.TryNotifyWaiter(key, parts[2]))
-        {
-            await RespWriter.WriteInteger(stream, 1);
-            return;
-        }
-
         var length = _store.RPUSH(parts);
         await RespWriter.WriteInteger(stream, length);
     }
