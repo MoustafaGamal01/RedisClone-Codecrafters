@@ -21,5 +21,6 @@ public enum CommandsName
     EXEC,
     DISCARD,
     WATCH,
-    UNWATCH
+    UNWATCH,
+    INFO
 }

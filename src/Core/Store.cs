@@ -454,4 +454,9 @@ public class Store
         return (success, number);
     }
 
+    public void INFO(string key)
+    {
+        
+    }
+
 }
