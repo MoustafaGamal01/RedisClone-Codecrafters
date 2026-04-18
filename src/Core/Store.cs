@@ -6,21 +6,22 @@ using System.Collections.Concurrent;
 public class Store
 {
 
+    private readonly ConcurrentDictionary<string, List<TaskCompletionSource<bool>>> _streamWaiters = new();
+    private readonly ConcurrentDictionary<string, Queue<TaskCompletionSource<string>>> _waiters = new();
     private readonly ConcurrentDictionary<string, RedisValue> _store = new();
     private readonly ConcurrentDictionary<string, long> _keyVersions = new();
-    private readonly ConcurrentDictionary<string, Queue<TaskCompletionSource<string>>> _waiters = new();
+    private readonly object _lock = new();
 
     private void IncrementVersion(string key)
     {
         _keyVersions.AddOrUpdate(key, 1, (_, v) => v + 1);
     }
 
+    // Returns the current version of the key, or 0 if the key does not exist
     public long GetVersion(string key)
     {
         return _keyVersions.TryGetValue(key, out var version) ? version : 0;
     }
-    private readonly ConcurrentDictionary<string, List<TaskCompletionSource<bool>>> _streamWaiters = new();
-    private readonly object _lock = new();
 
     public bool Set(string key, string value, DateTime? expiresAt = null)
     {

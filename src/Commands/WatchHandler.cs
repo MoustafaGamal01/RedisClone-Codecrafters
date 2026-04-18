@@ -23,6 +23,7 @@ internal class WatchHandler : ICommandHandler
             return;
         }
 
+        // Mark the client as being in a watched state
         for (int i = 1; i < parts.Count; i++)
         {
             var key = parts[i];
