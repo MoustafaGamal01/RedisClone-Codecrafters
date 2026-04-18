@@ -43,7 +43,7 @@ public class CommandHandler
 
         var command = parts[0].ToUpper();
 
-        if (context.IsInTransaction && command != "EXEC" && command != "DISCARD")
+        if (context.IsInTransaction && command != "EXEC" && command != "DISCARD" && command != "WATCH" && command != "MULTI")
         {
             context.CommandQueue.Enqueue(parts);
             await RespWriter.WriteSimpleString(stream, "QUEUED");

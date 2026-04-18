@@ -11,7 +11,6 @@ public class Store
     private readonly ConcurrentDictionary<string, List<TaskCompletionSource<bool>>> _streamWaiters = new();
     private readonly object _lock = new();
 
-
     public void Set(string key, string value, DateTime? expiresAt = null)
     {
         _store[key] = new RedisString { type = value, ExpiresAt = expiresAt };
