@@ -29,9 +29,9 @@ public class CommandHandler
             new XReadHandler(store),
             new IncrHandler(store),
             new MultiHandler(),
-            new ExecHandler(this),
+            new ExecHandler(this, store),
             new DiscardHandler(),
-            new WatchHandler(),
+            new WatchHandler(store),
         };
 
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());

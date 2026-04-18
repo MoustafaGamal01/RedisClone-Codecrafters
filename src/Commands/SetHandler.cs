@@ -39,9 +39,10 @@ internal class SetHandler : ICommandHandler
                     _ => null
                 };
             }
-        }
 
-        _store.Set(parts[1], parts[2], expiresAt);
+        }
+        var result = _store.Set(parts[1], parts[2], expiresAt);
+
         await RespWriter.WriteSimpleString(stream, "OK");
 
     }

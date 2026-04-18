@@ -7,13 +7,28 @@ public class Store
 {
 
     private readonly ConcurrentDictionary<string, RedisValue> _store = new();
+    private readonly ConcurrentDictionary<string, long> _keyVersions = new();
     private readonly ConcurrentDictionary<string, Queue<TaskCompletionSource<string>>> _waiters = new();
+
+    private void IncrementVersion(string key)
+    {
+        _keyVersions.AddOrUpdate(key, 1, (_, v) => v + 1);
+    }
+
+    public long GetVersion(string key)
+    {
+        return _keyVersions.TryGetValue(key, out var version) ? version : 0;
+    }
     private readonly ConcurrentDictionary<string, List<TaskCompletionSource<bool>>> _streamWaiters = new();
     private readonly object _lock = new();
 
-    public void Set(string key, string value, DateTime? expiresAt = null)
+    public bool Set(string key, string value, DateTime? expiresAt = null)
     {
+        IncrementVersion(key);
+       
         _store[key] = new RedisString { type = value, ExpiresAt = expiresAt };
+
+        return true;
     }
 
     public string? Get(string key)
@@ -32,6 +47,7 @@ public class Store
     public int RPUSH(List<string> parts)
     {
         var key = parts[1];
+        IncrementVersion(key);
         var list = GetOrCreate<RedisList>(key);
 
         for (int i = 2; i < parts.Count; i++)
@@ -46,6 +62,7 @@ public class Store
     public int LPUSH(List<string> parts)
     {
         var key = parts[1];
+        IncrementVersion(key);
         var list = GetOrCreate<RedisList>(key);
 
         for (int i = 2; i < parts.Count; i++)
@@ -96,6 +113,8 @@ public class Store
             return null;
 
         if (list.Items.Count == 0) return null;
+
+        IncrementVersion(key);
 
         int count = parts.Count == 2 ? 1 : int.Parse(parts[2]);
 
@@ -155,6 +174,7 @@ public class Store
         }
 
         var resolved = $"{time}-{seq}";
+        IncrementVersion(key);
         stream.Entries.Add((resolved, fields));
 
         NotifyStreamWaiters(key);
@@ -388,6 +408,7 @@ public class Store
         // If the key is new, initialize it to "1"
         if (entry.type == null)
         {
+            IncrementVersion(key);
             entry.type = "1";
             return (true, 1);
         }
@@ -398,6 +419,7 @@ public class Store
         // If the current value is a valid integer
         if (success)
         {
+            IncrementVersion(key);
             number++;
             entry.type = number.ToString();
         }

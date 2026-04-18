@@ -8,10 +8,11 @@ namespace codecrafters_redis.src.Commands;
 internal class ExecHandler : ICommandHandler
 {
     private readonly CommandHandler _dispatcher;
-
-    public ExecHandler(CommandHandler dispatcher)
+    private readonly Store _store;
+    public ExecHandler(CommandHandler dispatcher, Store store)
     {
         _dispatcher = dispatcher;
+        _store = store;
     }
 
     public CommandsName CommandName => CommandsName.EXEC;
@@ -24,9 +25,26 @@ internal class ExecHandler : ICommandHandler
             return;
         }
 
+        bool isAborted = false;
+        foreach (var kvp in context.WatchedKeys)
+        {
+            if (_store.GetVersion(kvp.Key) != kvp.Value)
+            {
+                isAborted = true;
+                break;
+            }
+        }
+        context.WatchedKeys.Clear();
+
         var queued = context.CommandQueue.ToList();
         context.CommandQueue.Clear();
         context.IsInTransaction = false;
+
+        if(isAborted)
+        {
+            await RespWriter.WriteNullArray(stream);
+            return;
+        }
 
         await RespWriter.WriteArrayHeader(stream, queued.Count);
 

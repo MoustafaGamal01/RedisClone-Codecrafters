@@ -17,6 +17,7 @@ internal class DiscardHandler : ICommandHandler
         }
         context.IsInTransaction = false;
         context.CommandQueue.Clear();
+        context.WatchedKeys.Clear();
         await RespWriter.WriteSimpleString(stream, "OK");
     }
 }
