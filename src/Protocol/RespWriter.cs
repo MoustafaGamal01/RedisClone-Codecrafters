@@ -130,4 +130,10 @@ public static class RespWriter
         await stream.WriteAsync(data, 0, data.Length);
     }
 
+    public static async Task WriteRDBFile(NetworkStream stream, byte[] rdbData)
+    {
+        var header = Encoding.UTF8.GetBytes($"${rdbData.Length}\r\n");
+        await stream.WriteAsync(header);
+        await stream.WriteAsync(rdbData); 
+    }
 }

@@ -1,5 +1,6 @@
 ﻿global using codecrafters_redis.src.Core;
 global using codecrafters_redis.src.IRepository;
+using codecrafters_redis.src.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +24,12 @@ internal class PsyncHandler  : ICommandHandler
         long offset = 0;
 
         await stream.WriteAsync(Encoding.UTF8.GetBytes($"+FULLRESYNC {runId} {offset}\r\n"));
+
+        await RespWriter.WriteRDBFile(stream, EmptyRdb);
+
     }
-    
+
+    private static readonly byte[] EmptyRdb = Convert.FromBase64String(
+    "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==");
+
 }
