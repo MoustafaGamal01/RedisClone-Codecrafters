@@ -12,9 +12,15 @@ internal class InfoHandler : ICommandHandler
 {
     public CommandsName CommandName => CommandsName.INFO;
 
-    private string GetReplicationInfo(string role, int slaveCount)
+    private string GetMasterReplicationInfo(string role, int slaveCount)
     {
-        return $"# Replication\r\nrole:{role}\r\nconnected_slaves:{slaveCount}";
+        return $"# Replication\r\nrole:{role}\r\nconnected_slaves:{slaveCount}\r\n" +
+            $"master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\r\nmaster_repl_offset:0";
+    }
+
+    private string GetSlaveReplicationInfo(string role, int slaveCount)
+    {
+        return $"# Replication\r\nrole:{role}\r\nconnected_slaves:{slaveCount}\r\n";
     }
 
     public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
@@ -26,7 +32,10 @@ internal class InfoHandler : ICommandHandler
         switch (key.ToUpper())
         {
             case "REPLICATION":
-                await RespWriter.WriteBulkString(stream, GetReplicationInfo(role, slaveCount));
+                if(role == "master")
+                    await RespWriter.WriteBulkString(stream, GetMasterReplicationInfo(role, slaveCount));
+                else 
+                    await RespWriter.WriteBulkString(stream, GetSlaveReplicationInfo(role, slaveCount));
                 break;
             default:
                 await RespWriter.WriteError(stream, $"Unsupported INFO section: {key}");
