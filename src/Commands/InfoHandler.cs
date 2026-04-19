@@ -28,14 +28,17 @@ internal class InfoHandler : ICommandHandler
         var key = parts.Count > 1 ? parts[1] : "default";
         var role = context.ClientRole["role"];
         var slaveCount = context.slaveCount;
-
+        var handShake = new List<string> { "PING" };
         switch (key.ToUpper())
         {
             case "REPLICATION":
-                if(role == "master")
+                if (role == "master")
                     await RespWriter.WriteBulkString(stream, GetMasterReplicationInfo(role, slaveCount));
-                else 
+                else
+                {
                     await RespWriter.WriteBulkString(stream, GetSlaveReplicationInfo(role, slaveCount));
+                    await RespWriter.WriteArray(stream, handShake);
+                }
                 break;
             default:
                 await RespWriter.WriteError(stream, $"Unsupported INFO section: {key}");
