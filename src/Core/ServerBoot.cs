@@ -46,6 +46,19 @@ internal class ServerBoot
         var buffer = new byte[1024];
         var bytes = await stream.ReadAsync(buffer);
         Console.WriteLine($"Master: {Encoding.UTF8.GetString(buffer, 0, bytes).Trim()}");
+
+        // the second step of the replication handshake.
+        // The REPLCONF Command is used by replicas to report their capabilities and state to the master.
+        var replconfCommand1 = $"*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n{_port}\r\n";
+        var replconfCommand2 = $"*3\r\n$8\r\nREPLCONF\r\n$4\r\ncapa\r\n$6\r\npsync2\r\n";
+
+        var replconfBytes1 = Encoding.UTF8.GetBytes(replconfCommand1);
+        var replconfBytes2 = Encoding.UTF8.GetBytes(replconfCommand2);
+
+        // Send the REPLCONF commands to the master
+        await stream.WriteAsync(replconfBytes1);
+        await stream.WriteAsync(replconfBytes2);
+
     }
 
     private async Task StartListening()
