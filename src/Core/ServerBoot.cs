@@ -39,8 +39,8 @@ internal class ServerBoot
         var parts = _replicaOf.Split(' ');
         var masterClient = new TcpClient();
         await masterClient.ConnectAsync(parts[0], int.Parse(parts[1]));
+        
         var stream = masterClient.GetStream();
-
         await stream.WriteAsync(Encoding.UTF8.GetBytes("*1\r\n$4\r\nPING\r\n"));
 
         var buffer = new byte[1024];
