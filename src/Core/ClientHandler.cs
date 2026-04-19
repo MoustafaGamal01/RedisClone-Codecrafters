@@ -1,5 +1,6 @@
 ﻿using codecrafters_redis.src.Commands;
 using codecrafters_redis.src.Protocol;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
@@ -8,10 +9,11 @@ namespace codecrafters_redis.src.Core;
 public class ClientHandler
 {
     private readonly CommandHandler _dispatcher;
-
-    public ClientHandler(CommandHandler dispatcher)
+    private readonly string[] _args;
+    public ClientHandler(CommandHandler dispatcher, string[] args)
     {
         _dispatcher = dispatcher;
+        _args = args;
     }
 
     public async Task HandleAsync(TcpClient client)
@@ -19,6 +21,14 @@ public class ClientHandler
         using var stream = client.GetStream();
         var buffer = new byte[4096];
         var context = new ClientContext();
+
+        if (_args.Length > 3 && _args[2] == "--replicaof") {
+            context.ClientRole["role"] = "slave";
+            context.slaveCount++;
+        }
+        else {
+            context.ClientRole["role"] = "master";
+        }
 
         while (true)
         {

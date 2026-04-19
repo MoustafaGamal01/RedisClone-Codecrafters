@@ -20,7 +20,7 @@ class Program
 
         var store = new Store();
         var dispatcher = new CommandHandler(store);
-        var clientHandler = new ClientHandler(dispatcher);
+        var clientHandler = new ClientHandler(dispatcher, args);
         var listener = new TcpListener(IPAddress.Any, port);
         listener.Start();
 
