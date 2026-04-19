@@ -1,5 +1,6 @@
 namespace codecrafters_redis.src.Commands;
 
+using codecrafters_redis.src.Client;
 using codecrafters_redis.src.Core;
 using codecrafters_redis.src.IRepository;
 using codecrafters_redis.src.Protocol;

@@ -1,6 +1,4 @@
-﻿global using codecrafters_redis.src.Core;
-global using codecrafters_redis.src.IRepository;
-using codecrafters_redis.src.Protocol;
+﻿using codecrafters_redis.src.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Linq;

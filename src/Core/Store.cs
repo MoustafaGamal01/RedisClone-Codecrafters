@@ -1,7 +1,5 @@
 namespace codecrafters_redis.src.Core;
 
-using codecrafters_redis.src.Redis;
-using System.Collections.Concurrent;
 
 public class Store
 {
@@ -453,10 +451,4 @@ public class Store
 
         return (success, number);
     }
-
-    public void INFO(string key)
-    {
-        
-    }
-
 }

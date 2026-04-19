@@ -1,6 +1,6 @@
 using codecrafters_redis.src.Commands;
 using System.Net.Sockets;
-using codecrafters_redis.src.Core;
+using codecrafters_redis.src.Client;
 
 namespace codecrafters_redis.src.IRepository;
 
