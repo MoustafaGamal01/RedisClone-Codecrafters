@@ -34,7 +34,8 @@ public class CommandHandler
             new WatchHandler(store),
             new UnwatchHandler(),
             new InfoHandler(),
-            new ReplConfHandler()
+            new ReplConfHandler(),
+            new PsyncHandler()
         };
 
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());

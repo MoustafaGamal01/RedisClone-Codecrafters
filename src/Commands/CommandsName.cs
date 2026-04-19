@@ -23,5 +23,6 @@ public enum CommandsName
     WATCH,
     UNWATCH,
     INFO,
-    REPLCONF
+    REPLCONF,
+    PSYNC,
 }
