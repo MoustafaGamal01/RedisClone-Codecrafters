@@ -1,7 +1,5 @@
 namespace codecrafters_redis.src.Protocol;
 
-
-
 public static class RespWriter
 {
     public static async Task WriteSimpleString(NetworkStream stream, string message)
