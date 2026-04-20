@@ -1,8 +1,4 @@
-﻿using codecrafters_redis.src.Client;
-using codecrafters_redis.src.Commands;
-using codecrafters_redis.src.Replication;
-using System.Net;
-using System.Net.Sockets;
+﻿using System.Net;
 
 namespace codecrafters_redis.src.Core;
 
@@ -14,6 +10,8 @@ internal class ServerBoot
 
     public ServerBoot(string[] args)
     {
+
+
         _args = args;
         string? replicaOf = null;
 
@@ -44,12 +42,17 @@ internal class ServerBoot
 
     private async Task StartListening()
     {
+        var sharedContext = new ClientContext();
+        sharedContext.Replication = _replication;
+        sharedContext.ClientRole["role"] = _replication.Role;
+
+
         var store = new Store();
         var dispatcher = new CommandHandler(store);
-        var clientHandler = new ClientHandler(dispatcher, _args);
+        var clientHandler = new ClientHandler(dispatcher, _args, sharedContext);
         var listener = new TcpListener(IPAddress.Any, _port);
         listener.Start();
-        Console.WriteLine($"[{_replication.Role}] Listening on port {_port}...");
+        Console.WriteLine($"[{_replication.Role}] Listening on port {_port}");
 
         while (true)
         {

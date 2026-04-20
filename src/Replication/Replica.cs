@@ -54,6 +54,7 @@ public class Replica : IReplicationRole
 
         var buffer = new byte[1024];
         var bytes = await stream.ReadAsync(buffer);
+
     }
 
     private async Task ListenToMaster(NetworkStream stream)

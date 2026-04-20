@@ -45,5 +45,11 @@ internal class SetHandler : ICommandHandler
 
         await RespWriter.WriteSimpleString(stream, "OK");
 
+        if (context.Replication is Master master)
+        {
+            var propagateParts = parts.Skip(1).ToList();
+            await master.PropagateCommand("SET", propagateParts);
+        }
+
     }
 }
