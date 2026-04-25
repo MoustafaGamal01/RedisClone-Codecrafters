@@ -1,4 +1,8 @@
-﻿using System.Net;
+﻿using codecrafters_redis.src.Client;
+using codecrafters_redis.src.Commands;
+using codecrafters_redis.src.Replication;
+using System.Net;
+using System.Net.Sockets;
 
 namespace codecrafters_redis.src.Core;
 
@@ -6,12 +10,10 @@ internal class ServerBoot
 {
     private readonly int _port;
     private readonly IReplicationRole _replication;
+    private readonly CommandHandler _dispatcher;
     private readonly string[] _args;
-
     public ServerBoot(string[] args)
     {
-
-
         _args = args;
         string? replicaOf = null;
 
@@ -23,10 +25,14 @@ internal class ServerBoot
 
         if (_port == 0) _port = 6379;
 
+        // Must be created here so Replica can receive dispatcher
+        var store = new Store();
+        _dispatcher = new CommandHandler(store);
+
         if (replicaOf != null)
         {
             var parts = replicaOf.Split(' ');
-            _replication = new Replica(parts[0], int.Parse(parts[1]));
+            _replication = new Replica(parts[0], int.Parse(parts[1]), _dispatcher);
         }
         else
         {
@@ -46,10 +52,7 @@ internal class ServerBoot
         sharedContext.Replication = _replication;
         sharedContext.ClientRole["role"] = _replication.Role;
 
-
-        var store = new Store();
-        var dispatcher = new CommandHandler(store);
-        var clientHandler = new ClientHandler(dispatcher, _args, sharedContext);
+        var clientHandler = new ClientHandler(_dispatcher, _args,sharedContext);
         var listener = new TcpListener(IPAddress.Any, _port);
         listener.Start();
         Console.WriteLine($"[{_replication.Role}] Listening on port {_port}");
