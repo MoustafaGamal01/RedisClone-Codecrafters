@@ -32,6 +32,7 @@ internal class ServerBoot
         var store = new Store();
         if (dir != null) store.SetConfig("dir", dir);
         if (dbfilename != null) store.SetConfig("dbfilename", dbfilename);
+        
         store.LoadRdb();
 
         _dispatcher = new CommandHandler(store);
