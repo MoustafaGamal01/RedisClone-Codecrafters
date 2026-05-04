@@ -25,4 +25,6 @@ public enum CommandsName
     INFO,
     REPLCONF,
     PSYNC,
+    WAIT
+
 }

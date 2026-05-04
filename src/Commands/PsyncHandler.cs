@@ -5,9 +5,6 @@ internal class PsyncHandler  : ICommandHandler
     public CommandsName CommandName => CommandsName.PSYNC;
     public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
-        Console.WriteLine("[DEBUG] PSYNC received");
-        Console.WriteLine($"[DEBUG] Replication is: {context.Replication?.GetType().Name ?? "NULL"}");
-
         if (context.Replication is not Master master)
         {
             await RespWriter.WriteError(stream, "PSYNC only valid on master");
