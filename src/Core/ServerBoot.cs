@@ -25,7 +25,6 @@ internal class ServerBoot
 
         if (_port == 0) _port = 6379;
 
-        // Must be created here so Replica can receive dispatcher
         var store = new Store();
         _dispatcher = new CommandHandler(store);
 
@@ -52,7 +51,7 @@ internal class ServerBoot
         sharedContext.Replication = _replication;
         sharedContext.ClientRole["role"] = _replication.Role;
 
-        var clientHandler = new ClientHandler(_dispatcher, _args,sharedContext);
+        var clientHandler = new ClientHandler(_dispatcher, _args, sharedContext);
         var listener = new TcpListener(IPAddress.Any, _port);
         listener.Start();
         Console.WriteLine($"[{_replication.Role}] Listening on port {_port}");

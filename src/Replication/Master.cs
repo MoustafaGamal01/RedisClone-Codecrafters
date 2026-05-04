@@ -1,4 +1,4 @@
-﻿namespace codecrafters_redis.src.Replication;
+namespace codecrafters_redis.src.Replication;
 
 internal class Master : IReplicationRole
 {
@@ -24,10 +24,18 @@ internal class Master : IReplicationRole
 
         var bytes = Encoding.UTF8.GetBytes(sb.ToString());
 
+        await SendToReplicas(bytes);
+
+    }
+
+    public async Task SendToReplicas(byte[] bytes)
+    {
         foreach (var replica in _replicas)
         {
             await replica.WriteAsync(bytes);
         }
+
+        ReplOffset += bytes.Length;
     }
 
 }

@@ -84,6 +84,7 @@ public class Replica : IReplicationRole
             var bytesRead = await stream.ReadAsync(buffer);
             if (bytesRead == 0) break;
 
+
             for (int i = 0; i < bytesRead; i++)
             {
                 remainder.Add(buffer[i]);
@@ -128,8 +129,10 @@ public class Replica : IReplicationRole
 
                     if (!hasFullCommand) break;
 
+                    int commandLength = currentPos;
                     remainder.RemoveRange(0, currentPos);
                     await _dispatcher.Dispatch(stream, parts, context);
+                    context.ReplicationOffset += commandLength;
                 }
                 else if (remainder[0] == (byte)'$')
                 {

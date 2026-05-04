@@ -9,6 +9,8 @@ public class ClientContext
     public Dictionary<string, string> ClientRole { get; } = new();
 
     public int slaveCount = 0;
+    public long ReplicationOffset { get; set; } = 0;
+
     public bool SuppressResponses { get; set; } = false;
     public Queue<List<string>> CommandQueue { get; } = new();
 }

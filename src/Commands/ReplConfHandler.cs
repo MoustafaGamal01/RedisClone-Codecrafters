@@ -1,15 +1,3 @@
-using codecrafters_redis.src.Client;
-using codecrafters_redis.src.IRepository;
-using codecrafters_redis.src.Protocol;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace codecrafters_redis.src.Commands;
-
 internal class ReplConfHandler : ICommandHandler
 {
     public CommandsName CommandName => CommandsName.REPLCONF;
@@ -18,7 +6,13 @@ internal class ReplConfHandler : ICommandHandler
     {
         if (parts.Count >= 3 && parts[1].ToUpper() == "GETACK")
         {
-            var items = new List<string>() { "REPLCONF", "ACK", "0" };
+            var items = new List<string>
+            {
+                "REPLCONF",
+                "ACK",
+                context.ReplicationOffset.ToString()
+            };
+
             await RespWriter.WriteArray(stream, items);
             return;
         }
@@ -29,4 +23,3 @@ internal class ReplConfHandler : ICommandHandler
         }
     }
 }
-
