@@ -1,4 +1,4 @@
-﻿using codecrafters_redis.src.Client;
+using codecrafters_redis.src.Client;
 using codecrafters_redis.src.Commands;
 using codecrafters_redis.src.Replication;
 using System.Net;
@@ -16,16 +16,22 @@ internal class ServerBoot
     {
         _args = args;
         string? replicaOf = null;
+        string? dir = null;
+        string? dbfilename = null;
 
         for (int i = 0; i < args.Length - 1; i++)
         {
             if (args[i] == "--port") _port = int.Parse(args[i + 1]);
             if (args[i] == "--replicaof") replicaOf = args[i + 1];
+            if (args[i] == "--dir") dir = args[i + 1];
+            if (args[i] == "--dbfilename") dbfilename = args[i + 1];
         }
 
         if (_port == 0) _port = 6379;
 
         var store = new Store();
+        if (dir != null) store.SetConfig("dir", dir);
+        if (dbfilename != null) store.SetConfig("dbfilename", dbfilename);
         _dispatcher = new CommandHandler(store);
 
         if (replicaOf != null)

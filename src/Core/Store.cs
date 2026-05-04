@@ -7,6 +7,7 @@ public class Store
     private readonly ConcurrentDictionary<string, List<TaskCompletionSource<bool>>> _streamWaiters = new();
     private readonly ConcurrentDictionary<string, Queue<TaskCompletionSource<string>>> _waiters = new();
     private readonly ConcurrentDictionary<string, RedisValue> _store = new();
+    private readonly ConcurrentDictionary<string, string> _configs = new();
     private readonly ConcurrentDictionary<string, long> _keyVersions = new();
     private readonly object _lock = new();
 
@@ -450,5 +451,15 @@ public class Store
         }
 
         return (success, number);
+    }
+
+    public void SetConfig(string key, string value)
+    {
+        _configs[key] = value;
+    }
+
+    public string? GetConfig(string key)
+    {
+        return _configs.TryGetValue(key, out var value) ? value : null;
     }
 }
