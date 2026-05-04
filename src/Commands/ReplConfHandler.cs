@@ -17,6 +17,15 @@ internal class ReplConfHandler : ICommandHandler
             return;
         }
 
+        if (parts.Count >= 3 && parts[1].ToUpper() == "ACK")
+        {
+            if (context.Replication is Master master && long.TryParse(parts[2], out var offset))
+            {
+                master.UpdateReplicaOffset(stream, offset);
+            }
+            return;
+        }
+
         if (!context.SuppressResponses)
         {
             await RespWriter.WriteSimpleString(stream, "OK");
