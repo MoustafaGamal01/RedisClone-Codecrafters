@@ -10,6 +10,9 @@ internal class PingHandler : ICommandHandler
     public CommandsName CommandName => CommandsName.PING;
     public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
-        await RespWriter.WriteSimpleString(stream, "PONG");
+        if (!context.SuppressResponses)
+        {
+            await RespWriter.WriteSimpleString(stream, "PONG");
+        }
     }
 }

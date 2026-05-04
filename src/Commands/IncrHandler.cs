@@ -23,6 +23,9 @@ internal class IncrHandler : ICommandHandler
             return;
         }
 
-        await RespWriter.WriteInteger(stream, result.Item2);
+        if (!context.SuppressResponses)
+        {
+            await RespWriter.WriteInteger(stream, result.Item2);
+        }
     }
 }

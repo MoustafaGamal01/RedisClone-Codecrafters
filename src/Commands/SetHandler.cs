@@ -43,7 +43,10 @@ internal class SetHandler : ICommandHandler
         }
         var result = _store.Set(parts[1], parts[2], expiresAt);
 
-        await RespWriter.WriteSimpleString(stream, "OK");
+        if (!context.SuppressResponses)
+        {
+            await RespWriter.WriteSimpleString(stream, "OK");
+        }
 
         if (context.Replication is Master master)
         {

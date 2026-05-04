@@ -26,7 +26,10 @@ internal class RPushHandler : ICommandHandler
         var key = parts[1];
 
         var length = _store.RPUSH(parts);
-        await RespWriter.WriteInteger(stream, length);
+        if (!context.SuppressResponses)
+        {
+            await RespWriter.WriteInteger(stream, length);
+        }
     }
 
 }

@@ -1,6 +1,8 @@
-﻿using codecrafters_redis.src.Client;
+using codecrafters_redis.src.Client;
 using codecrafters_redis.src.Commands;
 using codecrafters_redis.src.Protocol;
+using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
 
@@ -63,58 +65,111 @@ public class Replica : IReplicationRole
     {
         var cmd = "*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n";
         await stream.WriteAsync(Encoding.UTF8.GetBytes(cmd));
-
-        var buffer = new byte[1024];
-        await stream.ReadAsync(buffer);
-
-        var rdbBuffer = new byte[4096];
-        await stream.ReadAsync(rdbBuffer);
+        // We do NOT read the response here, because the master will reply with
+        // +FULLRESYNC, the RDB file, and propagated commands. 
+        // We let ListenToMaster handle all of that to prevent data loss.
     }
-
 
     private async Task ListenToMaster(NetworkStream stream)
     {
-        Console.WriteLine("[Replica] ListenToMaster started");
-        try
+        var context = new ClientContext { Replication = this };
+        context.ClientRole["role"] = "master";
+        context.SuppressResponses = true;
+
+        var buffer = new byte[4096];
+        var remainder = new List<byte>();
+
+        while (true)
         {
-            var buffer = new byte[4096];
-            var replicaContext = new ClientContext();
-            replicaContext.Replication = this;
-            replicaContext.ClientRole["role"] = "slave";
-            replicaContext.SuppressResponses = true;
+            var bytesRead = await stream.ReadAsync(buffer);
+            if (bytesRead == 0) break;
 
-            while (true)
+            for (int i = 0; i < bytesRead; i++)
             {
-                var bytes = await stream.ReadAsync(buffer);
-                if (bytes == 0) break;
+                remainder.Add(buffer[i]);
+            }
 
-                var request = Encoding.UTF8.GetString(buffer, 0, bytes);
-
-                var parts = request.Split('*');
-
-                foreach (var part in parts)
+            while (remainder.Count > 0)
+            {
+                if (remainder[0] == (byte)'*')
                 {
-                    if (string.IsNullOrEmpty(part)) continue;
+                    int firstCrLf = IndexOf(remainder, new byte[] { (byte)'\r', (byte)'\n' });
+                    if (firstCrLf == -1) break;
 
-                    var command = "*" + part;
-                    var parsed = RespParser.Parse(command);
-
-                    if (parsed.Count == 0) continue;
-
-                    var cmd = parsed[0].ToUpper();
-                    if (cmd != "SET" && cmd != "DEL" && cmd != "RPUSH" &&
-                        cmd != "LPUSH" && cmd != "XADD" && cmd != "INCR" &&
-                        cmd != "HSET" && cmd != "EXPIRE")
+                    string countStr = Encoding.UTF8.GetString(remainder.ToArray(), 1, firstCrLf - 1);
+                    if (!int.TryParse(countStr, out int numElements))
+                    {
+                        remainder.RemoveRange(0, firstCrLf + 2);
                         continue;
+                    }
 
-                    Console.WriteLine($"[Replica] Applying: {string.Join(" ", parsed)}");
-                    await _dispatcher.Dispatch(stream, parsed, replicaContext);
+                    int currentPos = firstCrLf + 2;
+                    var parts = new List<string>();
+                    bool hasFullCommand = true;
+
+                    for (int i = 0; i < numElements; i++)
+                    {
+                        if (currentPos >= remainder.Count) { hasFullCommand = false; break; }
+                        if (remainder[currentPos] != (byte)'$') { hasFullCommand = false; break; }
+
+                        int crLf = IndexOf(remainder, new byte[] { (byte)'\r', (byte)'\n' }, currentPos);
+                        if (crLf == -1) { hasFullCommand = false; break; }
+
+                        string lenStr = Encoding.UTF8.GetString(remainder.ToArray(), currentPos + 1, crLf - currentPos - 1);
+                        int len = int.Parse(lenStr);
+
+                        int dataStart = crLf + 2;
+                        if (dataStart + len + 2 > remainder.Count) { hasFullCommand = false; break; }
+
+                        string part = Encoding.UTF8.GetString(remainder.ToArray(), dataStart, len);
+                        parts.Add(part);
+                        currentPos = dataStart + len + 2;
+                    }
+
+                    if (!hasFullCommand) break;
+
+                    remainder.RemoveRange(0, currentPos);
+                    await _dispatcher.Dispatch(stream, parts, context);
+                }
+                else if (remainder[0] == (byte)'$')
+                {
+                    int crLf = IndexOf(remainder, new byte[] { (byte)'\r', (byte)'\n' });
+                    if (crLf == -1) break;
+
+                    string lenStr = Encoding.UTF8.GetString(remainder.ToArray(), 1, crLf - 1);
+                    int len = int.Parse(lenStr);
+                    int dataStart = crLf + 2;
+
+                    if (dataStart + len > remainder.Count) break;
+
+                    remainder.RemoveRange(0, dataStart + len);
+                }
+                else
+                {
+                    int crLf = IndexOf(remainder, new byte[] { (byte)'\r', (byte)'\n' });
+                    if (crLf == -1) break;
+
+                    remainder.RemoveRange(0, crLf + 2);
                 }
             }
         }
-        catch (Exception ex)
+    }
+
+    private int IndexOf(List<byte> list, byte[] pattern, int startIndex = 0)
+    {
+        for (int i = startIndex; i <= list.Count - pattern.Length; i++)
         {
-            Console.WriteLine($"[Replica] CRASH: {ex}");
+            bool match = true;
+            for (int j = 0; j < pattern.Length; j++)
+            {
+                if (list[i + j] != pattern[j])
+                {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) return i;
         }
+        return -1;
     }
 }

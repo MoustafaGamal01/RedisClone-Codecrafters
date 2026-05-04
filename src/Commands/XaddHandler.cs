@@ -35,6 +35,9 @@ internal class XaddHandler : ICommandHandler
             return;
         }
 
-        await RespWriter.WriteBulkString(stream, resolvedId);
+        if (!context.SuppressResponses)
+        {
+            await RespWriter.WriteBulkString(stream, resolvedId);
+        }
     }
 }

@@ -16,6 +16,9 @@ internal class EchoHandler : ICommandHandler
             await RespWriter.WriteError(stream, "ECHO requires an argument");
             return;
         }
-        await RespWriter.WriteBulkString(stream, parts[1]);
+        if (!context.SuppressResponses)
+        {
+            await RespWriter.WriteBulkString(stream, parts[1]);
+        }
     }
 }

@@ -1,4 +1,4 @@
-﻿using codecrafters_redis.src.Client;
+using codecrafters_redis.src.Client;
 using codecrafters_redis.src.IRepository;
 using codecrafters_redis.src.Protocol;
 using System;
@@ -16,7 +16,17 @@ internal class ReplConfHandler : ICommandHandler
 
     public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
-        await RespWriter.WriteSimpleString(stream, "OK");
+        if (parts.Count >= 3 && parts[1].ToUpper() == "GETACK")
+        {
+            var items = new List<string>() { "REPLCONF", "ACK", "0" };
+            await RespWriter.WriteArray(stream, items);
+            return;
+        }
+
+        if (!context.SuppressResponses)
+        {
+            await RespWriter.WriteSimpleString(stream, "OK");
+        }
     }
 }
 
