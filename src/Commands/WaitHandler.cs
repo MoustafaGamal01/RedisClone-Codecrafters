@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,6 +18,12 @@ internal class WaitHandler : ICommandHandler
             return;
         }
 
-        await RespWriter.WriteInteger(stream, 0);
+        int replicaCount = 0;
+        if (context.Replication is Master master)
+        {
+            replicaCount = master.ConnectedReplicaCount;
+        }
+
+        await RespWriter.WriteInteger(stream, replicaCount);
     }
 }

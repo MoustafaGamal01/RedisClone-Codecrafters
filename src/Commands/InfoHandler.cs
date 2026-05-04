@@ -1,4 +1,4 @@
-﻿
+
 using codecrafters_redis.src.Client;
 using codecrafters_redis.src.IRepository;
 using codecrafters_redis.src.Protocol;
@@ -27,7 +27,11 @@ internal class InfoHandler : ICommandHandler
     {
         var key = parts.Count > 1 ? parts[1] : "default";
         var role = context.ClientRole["role"];
-        var slaveCount = context.slaveCount;
+        int slaveCount = 0;
+        if (context.Replication is Master master)
+        {
+            slaveCount = master.ConnectedReplicaCount;
+        }
         var handShake = new List<string> { "PING" };
         switch (key.ToUpper())
         {

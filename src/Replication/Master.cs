@@ -5,6 +5,7 @@ internal class Master : IReplicationRole
     public string Role => "master";
     public readonly string ReplId = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb";
     public int ReplOffset = 0;
+    public int ConnectedReplicaCount => _replicas.Count;  
 
     private readonly List<NetworkStream> _replicas = new();
 
@@ -27,7 +28,6 @@ internal class Master : IReplicationRole
         await SendToReplicas(bytes);
 
     }
-
     public async Task SendToReplicas(byte[] bytes)
     {
         foreach (var replica in _replicas)

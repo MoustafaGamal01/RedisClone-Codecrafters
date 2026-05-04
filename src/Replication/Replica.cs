@@ -38,7 +38,6 @@ public class Replica : IReplicationRole
             try { await ListenToMaster(stream); }
             catch (Exception ex) { Console.WriteLine($"[Replica] Task crashed: {ex}"); }
         });
-
     }
 
     private async Task SendPing(NetworkStream stream)
