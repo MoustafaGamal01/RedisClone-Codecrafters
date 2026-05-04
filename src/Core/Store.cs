@@ -462,4 +462,20 @@ public class Store
     {
         return _configs.TryGetValue(key, out var value) ? value : null;
     }
+
+    public void LoadRdb()
+    {
+        var dir = GetConfig("dir");
+        var dbfilename = GetConfig("dbfilename");
+
+        if (dir != null && dbfilename != null)
+        {
+            var path = System.IO.Path.Combine(dir, dbfilename);
+            var loadedStore = RdbLoader.Load(path);
+            foreach (var kvp in loadedStore)
+            {
+                _store[kvp.Key] = kvp.Value;
+            }
+        }
+    }
 }

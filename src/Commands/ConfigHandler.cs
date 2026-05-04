@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace codecrafters_redis.src.Commands;
 
-internal class ConfigGetHandler : ICommandHandler
+internal class ConfigHandler : ICommandHandler
 {
     private readonly Store _store;
-    public ConfigGetHandler(Store store)
+    public ConfigHandler(Store store)
     {
         _store = store;
     }

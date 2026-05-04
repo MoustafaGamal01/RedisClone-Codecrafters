@@ -38,7 +38,8 @@ public class CommandHandler
             new ReplConfHandler(),
             new PsyncHandler(),
             new WaitHandler(),
-            new ConfigGetHandler(store),
+            new ConfigHandler(store),
+            new KeysHandler(store)  
         };
 
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());

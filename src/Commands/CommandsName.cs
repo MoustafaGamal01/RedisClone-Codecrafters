@@ -27,5 +27,7 @@ public enum CommandsName
     PSYNC,
     WAIT, 
     CONFIG,
+    KEYS,
+
 
 }
