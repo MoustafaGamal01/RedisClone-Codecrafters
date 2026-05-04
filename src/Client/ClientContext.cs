@@ -10,7 +10,6 @@ public class ClientContext
 
     public int slaveCount = 0;
     public long ReplicationOffset { get; set; } = 0;
-
     public bool SuppressResponses { get; set; } = false;
     public Queue<List<string>> CommandQueue { get; } = new();
 }
