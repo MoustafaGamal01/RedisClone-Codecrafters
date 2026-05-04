@@ -463,6 +463,13 @@ public class Store
         return _configs.TryGetValue(key, out var value) ? value : null;
     }
 
+    public List<string> KEYS(string key)
+    {
+        var pattern = "^" + System.Text.RegularExpressions.Regex.Escape(key).Replace("\\*", ".*") + "$";
+        var regex = new System.Text.RegularExpressions.Regex(pattern);
+        return _store.Keys.Where(k => regex.IsMatch(k)).ToList();
+    }
+
     public void LoadRdb()
     {
         var dir = GetConfig("dir");
