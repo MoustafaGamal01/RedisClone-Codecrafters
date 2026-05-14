@@ -67,6 +67,13 @@ public class CommandHandler
                 await RespWriter.WriteError(stream, $"can't execute '{command.ToLower()}'");
                 return;
             }
+            // ping in subscribe mode
+            if(command == "PING")
+            {
+                var response = $"*2\r\n$4\r\npong\r\n${0}\r\n{""}\r\n";
+                stream.Write(System.Text.Encoding.UTF8.GetBytes(response));
+                return;
+            }
         }
 
         if (_handlers.TryGetValue(command, out var handler))
