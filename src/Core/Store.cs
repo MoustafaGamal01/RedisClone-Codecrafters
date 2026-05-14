@@ -492,10 +492,13 @@ public class Store
         lock (list) { list.Add(stream); }
     }
 
-    public int GetSubscriberCount(string channel)
+    public List<NetworkStream> PUBLISH(string channel)
     {
-        if (!_subscribers.TryGetValue(channel, out var list)) return 0;
-        lock (list) { return list.Count; }
+        if (!_subscribers.TryGetValue(channel, out var list)) return new List<NetworkStream>();
+        lock (list)
+        {
+            return new List<NetworkStream>(list);
+        }
     }
 
 }

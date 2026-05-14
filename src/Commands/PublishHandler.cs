@@ -24,7 +24,15 @@ internal class PublishHandler : ICommandHandler {
         }
 
         var channel = parts[1];
-        var count = _store.GetSubscriberCount(channel);
-        await RespWriter.WriteInteger(stream, count);
+        var message = parts[2];
+        var list = _store.PUBLISH(channel);
+
+        foreach (var strm in list)
+        {
+            var response = $"*3\r\n$7\r\nmessage\r\n${channel.Length}\r\n{channel}\r\n${message.Length}\r\n{message}\r\n";
+            await strm.WriteAsync(System.Text.Encoding.UTF8.GetBytes(response));
+        }
+
+        await RespWriter.WriteInteger(stream, list.Count);
     }
 }
