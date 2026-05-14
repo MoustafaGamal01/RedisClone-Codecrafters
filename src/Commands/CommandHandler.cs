@@ -59,6 +59,16 @@ public class CommandHandler
             return;
         }
 
+        if (context.SubscribedChannels.Count > 0)
+        {
+            if(command != "SUBSCRIBE" && command != "UNSUBSCRIBE" && command != "PING"
+                && command != "QUIT" && command != "RESET")
+            {
+                await RespWriter.WriteError(stream, $"can't execute '{command.ToLower()}'");
+                return;
+            }
+        }
+
         if (_handlers.TryGetValue(command, out var handler))
             await handler.Handle(stream, parts, context);
         else
