@@ -29,4 +29,6 @@ public enum CommandsName
     CONFIG,
     KEYS,
     SUBSCRIBE,
+    PUBLISH,
+    UNSUBSCRIBE
 }

@@ -9,8 +9,8 @@ public class Store
     private readonly ConcurrentDictionary<string, RedisValue> _store = new();
     private readonly ConcurrentDictionary<string, string> _configs = new();
     private readonly ConcurrentDictionary<string, long> _keyVersions = new();
+    private readonly ConcurrentDictionary<string, List<NetworkStream>> _subscribers = new();
     private readonly object _lock = new();
-
     private void IncrementVersion(string key)
     {
         _keyVersions.AddOrUpdate(key, 1, (_, v) => v + 1);
@@ -484,6 +484,18 @@ public class Store
                 _store[kvp.Key] = kvp.Value;
             }
         }
+    }
+
+    public void Subscribe(string channel, NetworkStream stream)
+    {
+        var list = _subscribers.GetOrAdd(channel, _ => new List<NetworkStream>());
+        lock (list) { list.Add(stream); }
+    }
+
+    public int GetSubscriberCount(string channel)
+    {
+        if (!_subscribers.TryGetValue(channel, out var list)) return 0;
+        lock (list) { return list.Count; }
     }
 
 }
