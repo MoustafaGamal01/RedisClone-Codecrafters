@@ -28,4 +28,5 @@ public enum CommandsName
     WAIT, 
     CONFIG,
     KEYS,
+    SUBSCRIBE,
 }
