@@ -486,10 +486,20 @@ public class Store
         }
     }
 
-    public void Subscribe(string channel, NetworkStream stream)
+    public void SUBSCRIBE(string channel, NetworkStream stream)
     {
         var list = _subscribers.GetOrAdd(channel, _ => new List<NetworkStream>());
         lock (list) { list.Add(stream); }
+    }
+
+    public int UNSUBSCRIBE(string channel, NetworkStream stream)
+    {
+        if (!_subscribers.TryGetValue(channel, out var list)) return 0;
+        lock (list)
+        {
+            list.Remove(stream);
+            return list.Count;
+        }
     }
 
     public List<NetworkStream> PUBLISH(string channel)
