@@ -3,7 +3,7 @@ namespace codecrafters_redis.src.Core;
 
 public class Store
 {
-    private readonly ConcurrentDictionary<string, HashSet<(double score, string value)>> _zadd = new();
+    private readonly ConcurrentDictionary<string, SortedSet<(double score, string value)>> _zadd = new();
     private readonly ConcurrentDictionary<string, List<TaskCompletionSource<bool>>> _streamWaiters = new();
     private readonly ConcurrentDictionary<string, Queue<TaskCompletionSource<string>>> _waiters = new();
     private readonly ConcurrentDictionary<string, RedisValue> _store = new();
@@ -513,92 +513,80 @@ public class Store
 
     public bool ZADD(List<string> parts)
     {
-        var key= parts[1];
-        var score= double.Parse(parts[2]);
+        var key = parts[1];
+        var score = double.Parse(parts[2]);
         var member = parts[3];
 
-        bool newMember = false;
-        
-        if(_zadd.TryGetValue(key, out var set))
-        {
-            lock (set)
-            {
-                var existing = set.FirstOrDefault(x => x.value == member);
-                if (existing.value != null)
-                {
-                    set.Remove(existing);
-                    set.Add((score, member));
-                }
-                else
-                {
-                    set.Add((score, member));
-                    newMember = true;
-                }
-            }
-        }
-        else
-        {
-            _zadd[key] = new HashSet<(double score, string member)> { (score, member) };
-            newMember = true;
-        }
+        var set = _zadd.GetOrAdd(key, _ => new SortedSet<(double, string)>(ScoreComparer.Instance));
 
-        return newMember;
+        lock (set)
+        {
+            var existing = set.FirstOrDefault(x => x.value == member);
+            if (existing.value != null)
+            {
+                set.Remove(existing);
+                set.Add((score, member));
+                return false; 
+            }
+
+            set.Add((score, member));
+            return true;
+        }
     }
 
     public int ZRANK(string key, string member)
     {
-        if (_zadd.TryGetValue(key, out var set))
-        {
-            var sortedSet =  _zadd[key].OrderBy(x => x.score).ThenBy(x => x.value).ToList();
-            lock (sortedSet) {
-                for (int i = 0; i < sortedSet.Count; i++)
-                {
-                    if (sortedSet.ElementAt(i).value == member)
-                        return i;
-                }
+        if (!_zadd.TryGetValue(key, out var set)) return -1;
 
-                return -1;
+        lock (set)
+        {
+            int rank = 0;
+            foreach (var entry in set) 
+            {
+                if (entry.value == member) return rank;
+                rank++;
             }
-        }
-        else {
             return -1;
         }
     }
 
     public List<string> ZRANGE(string key, int start, int end)
     {
-        if (_zadd.TryGetValue(key, out var set))
-        {
-            var sortedSet = _zadd[key].OrderBy(x => x.score).ThenBy(x => x.value).ToList();
-            
-            int max = sortedSet.Count - 1;
-            if (start < 0) start = max + start + 1;
-            if(end < 0) end = max + end + 1;
+        if (!_zadd.TryGetValue(key, out var set)) return new();
 
-            lock (sortedSet)
-            {
-                List<string> result = sortedSet.Skip(start).Take(end - start + 1).Select(x => x.value).ToList(); 
-                return result;
-            }
-        }
-        else
+        lock (set)
         {
-            return new List<string>();
+            var list = set.ToList(); 
+            int max = list.Count - 1;
+
+            if (start < 0) start = max + start + 1;
+            if (end < 0) end = max + end + 1;
+
+            start = Math.Max(0, start);
+            end = Math.Min(end, max);
+
+            if (start > end) return new();
+
+            return list.Skip(start).Take(end - start + 1).Select(x => x.value).ToList();
         }
     }
 
     public int ZCARD(string key)
     {
-        if (_zadd.TryGetValue(key, out var set))
+        if (!_zadd.TryGetValue(key, out var set)) return 0;
+
+        lock (set) { return set.Count; }
+    }
+
+    private class ScoreComparer : IComparer<(double score, string value)>
+    {
+        public static readonly ScoreComparer Instance = new();
+        public int Compare((double score, string value) x, (double score, string value) y)
         {
-            lock (set)
-            {
-                return set.Count;
-            }
-        }
-        else
-        {
-            return 0;
+            int cmp = x.score.CompareTo(y.score);
+            return cmp != 0 ? cmp : string.Compare(x.value, y.value, StringComparison.Ordinal);
         }
     }
+
 }
+
