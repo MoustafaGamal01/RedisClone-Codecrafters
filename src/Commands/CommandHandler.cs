@@ -42,7 +42,8 @@ public class CommandHandler
             new KeysHandler(store),
             new SubscribeHandler(store),
             new PublishHandler(store),
-            new UnsubscribeHandler(store)
+            new UnsubscribeHandler(store),
+            new ZaddHandler(store),
         };
 
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());

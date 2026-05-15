@@ -30,5 +30,7 @@ public enum CommandsName
     KEYS,
     SUBSCRIBE,
     PUBLISH,
-    UNSUBSCRIBE
+    UNSUBSCRIBE,
+    ZADD,
+    ZRANGE,
 }

@@ -31,7 +31,7 @@ internal class UnsubscribeHandler:ICommandHandler
         context.SubscribedChannels.Remove(channel);
 
         var response = $"*3\r\n$11\r\nunsubscribe\r\n${channel.Length}\r\n{channel}\r\n:{size}\r\n";
-        await stream.WriteAsync(Encoding.UTF8.GetBytes(response));
 
+        await stream.WriteAsync(Encoding.UTF8.GetBytes(response));
     }
 }

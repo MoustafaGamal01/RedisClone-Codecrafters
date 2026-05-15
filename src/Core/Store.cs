@@ -3,7 +3,7 @@ namespace codecrafters_redis.src.Core;
 
 public class Store
 {
-
+    private readonly ConcurrentDictionary<string, HashSet<(double score, string value)>> _zadd = new();
     private readonly ConcurrentDictionary<string, List<TaskCompletionSource<bool>>> _streamWaiters = new();
     private readonly ConcurrentDictionary<string, Queue<TaskCompletionSource<string>>> _waiters = new();
     private readonly ConcurrentDictionary<string, RedisValue> _store = new();
@@ -509,6 +509,23 @@ public class Store
         {
             return new List<NetworkStream>(list);
         }
+    }
+
+    public int ZADD(List<string> parts)
+    {
+        var key= parts[1];
+        var score= double.Parse(parts[2]);
+        var member = parts[3];
+
+        _zadd.AddOrUpdate(key, _ => new HashSet<(double score, string member)> { (score, member) }, (_, set) =>
+        {
+            set.Add((score, member));
+            return set;
+        });
+        
+        //var sortedSet = _zadd[key].OrderBy(x => x.score).ThenBy(x => x.value).ToList();
+        
+        return _zadd[key].Count;
     }
 
 }
