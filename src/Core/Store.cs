@@ -570,6 +570,11 @@ public class Store
         if (_zadd.TryGetValue(key, out var set))
         {
             var sortedSet = _zadd[key].OrderBy(x => x.score).ThenBy(x => x.value).ToList();
+            
+            int max = sortedSet.Count - 1;
+            if (start < 0) start = max + start + 1;
+            if(end < 0) end = max + end + 1;
+
             lock (sortedSet)
             {
                 List<string> result = sortedSet.Skip(start).Take(end - start + 1).Select(x => x.value).ToList(); 
