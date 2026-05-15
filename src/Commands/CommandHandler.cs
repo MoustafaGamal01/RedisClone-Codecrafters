@@ -45,6 +45,7 @@ public class CommandHandler
             new UnsubscribeHandler(store),
             new ZaddHandler(store),
             new ZrankHandler(store),    
+            new ZrangeHandler(store)
         };
 
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());

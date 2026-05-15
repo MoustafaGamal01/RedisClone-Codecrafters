@@ -545,25 +545,40 @@ public class Store
         return newMember;
     }
 
-        public int ZRANK(string key, string member)
+    public int ZRANK(string key, string member)
+    {
+        if (_zadd.TryGetValue(key, out var set))
         {
-            if (_zadd.TryGetValue(key, out var set))
-            {
-                var sortedSet =  _zadd[key].OrderBy(x => x.score).ThenBy(x => x.value).ToList();
-                lock (sortedSet) {
-                    for (int i = 0; i < sortedSet.Count; i++)
-                    {
-                        if (sortedSet.ElementAt(i).value == member)
-                            return i;
-                    }
-
-                    return -1;
+            var sortedSet =  _zadd[key].OrderBy(x => x.score).ThenBy(x => x.value).ToList();
+            lock (sortedSet) {
+                for (int i = 0; i < sortedSet.Count; i++)
+                {
+                    if (sortedSet.ElementAt(i).value == member)
+                        return i;
                 }
-            }
-            else {
+
                 return -1;
             }
-
         }
+        else {
+            return -1;
+        }
+    }
 
+    public List<string> ZRANGE(string key, int start, int end)
+    {
+        if (_zadd.TryGetValue(key, out var set))
+        {
+            var sortedSet = _zadd[key].OrderBy(x => x.score).ThenBy(x => x.value).ToList();
+            lock (sortedSet)
+            {
+                List<string> result = sortedSet.Skip(start).Take(end - start + 1).Select(x => x.value).ToList(); 
+                return result;
+            }
+        }
+        else
+        {
+            return new List<string>();
+        }
+    }
 }
