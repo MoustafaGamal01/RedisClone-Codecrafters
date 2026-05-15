@@ -33,4 +33,7 @@ public enum CommandsName
     UNSUBSCRIBE,
     ZADD,
     ZRANGE,
+    ZRANK,
+
+
 }

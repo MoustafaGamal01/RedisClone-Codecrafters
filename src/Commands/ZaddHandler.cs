@@ -15,15 +15,16 @@ internal class ZaddHandler : ICommandHandler
     }
     public CommandsName CommandName => CommandsName.ZADD;
 
-    public Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
+    public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
         if(parts.Count < 4 || parts.Count % 2 != 0)
         {
-            return RespWriter.WriteError(stream,"wrong number of arguments for 'zadd' command\r\n");
+            await RespWriter.WriteError(stream,"wrong number of arguments for 'zadd' command\r\n");
+            return;
         }
 
         var numberOfMembers = _store.ZADD(parts) == true ? 1 : 0;
 
-        return RespWriter.WriteInteger(stream, numberOfMembers);
+        await RespWriter.WriteInteger(stream, numberOfMembers);
     }
 }

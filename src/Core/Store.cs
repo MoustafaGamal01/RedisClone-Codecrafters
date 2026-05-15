@@ -545,4 +545,25 @@ public class Store
         return newMember;
     }
 
+        public int ZRANK(string key, string member)
+        {
+            if (_zadd.TryGetValue(key, out var set))
+            {
+                var sortedSet =  _zadd[key].OrderBy(x => x.score).ThenBy(x => x.value).ToList();
+                lock (sortedSet) {
+                    for (int i = 0; i < sortedSet.Count; i++)
+                    {
+                        if (sortedSet.ElementAt(i).value == member)
+                            return i;
+                    }
+
+                    return -1;
+                }
+            }
+            else {
+                return -1;
+            }
+
+        }
+
 }
