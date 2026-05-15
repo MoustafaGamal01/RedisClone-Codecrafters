@@ -596,6 +596,21 @@ public class Store
         return -1;
     }
 
+    public int ZREM(string key, string member)
+    {
+        if (!_zadd.TryGetValue(key, out var set)) return 0;
+        lock (set)
+        {
+            var existingMember = set.FirstOrDefault(x => x.value == member);
+            if (existingMember.value != null)
+            {
+                set.Remove(existingMember);
+                return 1;
+            }
+            return 0;
+        }
+    }
+
     private class ScoreComparer : IComparer<(double score, string value)>
     {
         public static readonly ScoreComparer Instance = new();

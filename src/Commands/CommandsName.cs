@@ -36,6 +36,7 @@ public enum CommandsName
     ZRANK,
     ZCARD,
     ZSCORE,
+    ZREM,
 
 
 

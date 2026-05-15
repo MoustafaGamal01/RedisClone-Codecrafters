@@ -48,6 +48,7 @@ public class CommandHandler
             new ZrangeHandler(store),
             new ZcardHandler(store),
             new ZscoreHandler(store),
+            new ZremHandler(store)
         };
 
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());
