@@ -586,4 +586,19 @@ public class Store
             return new List<string>();
         }
     }
+
+    public int ZCARD(string key)
+    {
+        if (_zadd.TryGetValue(key, out var set))
+        {
+            lock (set)
+            {
+                return set.Count;
+            }
+        }
+        else
+        {
+            return 0;
+        }
+    }
 }

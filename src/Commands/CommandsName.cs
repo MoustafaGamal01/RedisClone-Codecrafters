@@ -34,6 +34,8 @@ public enum CommandsName
     ZADD,
     ZRANGE,
     ZRANK,
+    ZCARD,
+
 
 
 }
