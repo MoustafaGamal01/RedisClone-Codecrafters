@@ -16,7 +16,6 @@ public class Store
         _keyVersions.AddOrUpdate(key, 1, (_, v) => v + 1);
     }
 
-    // Returns the current version of the key, or 0 if the key does not exist
     public long GetVersion(string key)
     {
         return _keyVersions.TryGetValue(key, out var version) ? version : 0;
@@ -578,6 +577,25 @@ public class Store
         lock (set) { return set.Count; }
     }
 
+    public double ZSCORE(string key, string member)
+    {
+        if(_zadd.TryGetValue(key, out var set))
+        {
+            lock (set)
+            {
+                var existingMember = set.FirstOrDefault(x => x.value == member);
+
+                if (existingMember.value != null)
+                {
+                    return existingMember.score;
+                }
+
+                return -1;
+            }
+        }
+        return -1;
+    }
+
     private class ScoreComparer : IComparer<(double score, string value)>
     {
         public static readonly ScoreComparer Instance = new();
@@ -587,6 +605,7 @@ public class Store
             return cmp != 0 ? cmp : string.Compare(x.value, y.value, StringComparison.Ordinal);
         }
     }
+
 
 }
 

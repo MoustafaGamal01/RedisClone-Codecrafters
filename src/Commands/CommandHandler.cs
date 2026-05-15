@@ -46,7 +46,8 @@ public class CommandHandler
             new ZaddHandler(store),
             new ZrankHandler(store),    
             new ZrangeHandler(store),
-            new ZcardHandler(store)
+            new ZcardHandler(store),
+            new ZscoreHandler(store),
         };
 
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());
