@@ -511,21 +511,38 @@ public class Store
         }
     }
 
-    public int ZADD(List<string> parts)
+    public bool ZADD(List<string> parts)
     {
         var key= parts[1];
         var score= double.Parse(parts[2]);
         var member = parts[3];
 
-        _zadd.AddOrUpdate(key, _ => new HashSet<(double score, string member)> { (score, member) }, (_, set) =>
+        bool newMember = false;
+        
+        if(_zadd.TryGetValue(key, out var set))
         {
-            set.Add((score, member));
-            return set;
-        });
-        
-        //var sortedSet = _zadd[key].OrderBy(x => x.score).ThenBy(x => x.value).ToList();
-        
-        return _zadd[key].Count;
+            lock (set)
+            {
+                var existing = set.FirstOrDefault(x => x.value == member);
+                if (existing.value != null)
+                {
+                    set.Remove(existing);
+                    set.Add((score, member));
+                }
+                else
+                {
+                    set.Add((score, member));
+                    newMember = true;
+                }
+            }
+        }
+        else
+        {
+            _zadd[key] = new HashSet<(double score, string member)> { (score, member) };
+            newMember = true;
+        }
+
+        return newMember;
     }
 
 }

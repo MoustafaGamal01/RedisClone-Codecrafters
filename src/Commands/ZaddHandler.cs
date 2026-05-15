@@ -22,7 +22,7 @@ internal class ZaddHandler : ICommandHandler
             return RespWriter.WriteError(stream,"wrong number of arguments for 'zadd' command\r\n");
         }
 
-        var numberOfMembers = _store.ZADD(parts);
+        var numberOfMembers = _store.ZADD(parts) == true ? 1 : 0;
 
         return RespWriter.WriteInteger(stream, numberOfMembers);
     }
