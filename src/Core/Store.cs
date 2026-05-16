@@ -614,9 +614,12 @@ public class Store
         }
     }
 
-    public int GEOADD(string key, double longitude, double latitude, string place)
+    public int GEOADD(string key, double latitude, double longitude, string place)
     {
-        var score = GeohashEncoder.Encode(latitude, longitude); 
+        //_geoadd.GetOrAdd(key, _ => new SortedSet<(double, double, string)>());
+        
+        //return _geoadd[key].Add((latitude, longitude, place)) ? 1 : 0;
+        var score = GeohashEncoder.Encode(latitude, longitude);
         ZADD(new List<string> { "ZADD", key, score.ToString(), place });
         return 1;
     }
