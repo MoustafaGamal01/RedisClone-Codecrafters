@@ -637,7 +637,10 @@ public class Store
             {
                 var entry = set.FirstOrDefault(x => x.value == place);
                 if (entry.value != null)
-                    result.Add((0, 0)); 
+                {
+                    var decode = RedisGeohashDecoder.Decode((long)entry.score);
+                    result.Add(decode);
+                }
                 else
                     result.Add(null);
             }

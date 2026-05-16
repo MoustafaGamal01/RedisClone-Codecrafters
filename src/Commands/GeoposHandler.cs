@@ -39,9 +39,9 @@ internal class GeoposHandler : ICommandHandler
             }
             else
             {
-                var lonStr = "0";
-                var latStr = "0";
-                sb.Append($"*2\r\n${lonStr.Length}\r\n{lonStr}\r\n${latStr.Length}\r\n{latStr}\r\n");
+                var latStr = item.Value.Item1;
+                var lonStr = item.Value.Item2;
+                sb.Append($"*2\r\n${lonStr.ToString().Length}\r\n{lonStr}\r\n${latStr.ToString().Length}\r\n{latStr}\r\n");
             }
         }
 
