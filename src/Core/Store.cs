@@ -616,9 +616,33 @@ public class Store
 
     public int GEOADD(string key, double longitude, double latitude, string place)
     {
-        var score = GeohashEncoder.Encode(latitude, longitude); // latitude first, longitude second
+        var score = GeohashEncoder.Encode(latitude, longitude); 
         ZADD(new List<string> { "ZADD", key, score.ToString(), place });
         return 1;
+    }
+
+    public List<(double, double)?> GEOPOS(string key, List<string> places)
+    {
+        var result = new List<(double, double)?>();
+
+        foreach (var place in places)
+        {
+            if (!_zadd.TryGetValue(key, out var set))
+            {
+                result.Add(null);
+                continue;
+            }
+
+            lock (set)
+            {
+                var entry = set.FirstOrDefault(x => x.value == place);
+                if (entry.value != null)
+                    result.Add((0, 0)); 
+                else
+                    result.Add(null);
+            }
+        }
+        return result;
     }
 }
 
