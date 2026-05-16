@@ -616,9 +616,12 @@ public class Store
 
     public int GEOADD(string key, double latitude, double longitude, string place)
     {
-        _geoadd.GetOrAdd(key, _ => new SortedSet<(double, double, string)>());
+        //_geoadd.GetOrAdd(key, _ => new SortedSet<(double, double, string)>());
         
-        return _geoadd[key].Add((latitude, longitude, place)) ? 1 : 0;
+        //return _geoadd[key].Add((latitude, longitude, place)) ? 1 : 0;
+        
+        ZADD(new List<string> { "ZADD", key, "0", place });
+        return 1;
     }
 }
 
