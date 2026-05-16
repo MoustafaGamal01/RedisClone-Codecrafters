@@ -1,9 +1,12 @@
+using System.Reflection.Metadata.Ecma335;
+
 namespace codecrafters_redis.src.Core;
 
 
 public class Store
 {
     private readonly ConcurrentDictionary<string, SortedSet<(double score, string value)>> _zadd = new();
+    private readonly ConcurrentDictionary<string, SortedSet<(double longitude, double latitude, string place)>> _geoadd = new();
     private readonly ConcurrentDictionary<string, List<TaskCompletionSource<bool>>> _streamWaiters = new();
     private readonly ConcurrentDictionary<string, Queue<TaskCompletionSource<string>>> _waiters = new();
     private readonly ConcurrentDictionary<string, RedisValue> _store = new();
@@ -611,6 +614,13 @@ public class Store
         }
     }
 
+    public int GEOADD(string key, double latitude, double longitude, string place)
+    {
+        _geoadd.GetOrAdd(key, _ => new SortedSet<(double, double, string)>());
+        
+        return _geoadd[key].Add((latitude, longitude, place)) ? 1 : 0;
+    }
+
     private class ScoreComparer : IComparer<(double score, string value)>
     {
         public static readonly ScoreComparer Instance = new();
@@ -620,7 +630,5 @@ public class Store
             return cmp != 0 ? cmp : string.Compare(x.value, y.value, StringComparison.Ordinal);
         }
     }
-
-
 }
 

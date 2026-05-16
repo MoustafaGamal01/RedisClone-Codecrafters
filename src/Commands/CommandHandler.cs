@@ -48,7 +48,8 @@ public class CommandHandler
             new ZrangeHandler(store),
             new ZcardHandler(store),
             new ZscoreHandler(store),
-            new ZremHandler(store)
+            new ZremHandler(store),
+            new GeoaddHandler(store)
         };
 
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());
