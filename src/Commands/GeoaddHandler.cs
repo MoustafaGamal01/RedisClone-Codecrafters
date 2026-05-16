@@ -30,6 +30,12 @@ internal class GeoaddHandler : ICommandHandler
         var latitude = double.Parse(parts[3]);
         var place = parts[4];
 
+        if(logitude < -180 || logitude > 180 || latitude < -85.05112878 || latitude > 85.05112878)
+        {
+            await RespWriter.WriteError(stream, $"invalid longitude,latitude pair {logitude},{latitude}");
+            return;
+        }
+
         var added = _store.GEOADD(key, logitude, latitude, place);
     
         await RespWriter.WriteInteger(stream, added);

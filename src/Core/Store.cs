@@ -519,7 +519,7 @@ public class Store
         var score = double.Parse(parts[2]);
         var member = parts[3];
 
-        var set = _zadd.GetOrAdd(key, _ => new SortedSet<(double, string)>(ScoreComparer.Instance));
+        var set = _zadd.GetOrAdd(key, _ => new SortedSet<(double, string)>(RedisScoreComparer.Instance));
 
         lock (set)
         {
@@ -619,16 +619,6 @@ public class Store
         _geoadd.GetOrAdd(key, _ => new SortedSet<(double, double, string)>());
         
         return _geoadd[key].Add((latitude, longitude, place)) ? 1 : 0;
-    }
-
-    private class ScoreComparer : IComparer<(double score, string value)>
-    {
-        public static readonly ScoreComparer Instance = new();
-        public int Compare((double score, string value) x, (double score, string value) y)
-        {
-            int cmp = x.score.CompareTo(y.score);
-            return cmp != 0 ? cmp : string.Compare(x.value, y.value, StringComparison.Ordinal);
-        }
     }
 }
 
