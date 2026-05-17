@@ -35,11 +35,11 @@ internal class GeodistHandler : ICommandHandler
 
         var converted = unit switch
         {
-            "m" => result,              // already meters
-            "km" => result / 1000,       // meters → km
-            "mi" => result / 1609.344,   // meters → miles
-            "ft" => result * 3.28084,    // meters → feet
-            _ => result               // default meters
+            "m" => result,              
+            "km" => result / 1000,      
+            "mi" => result / 1609.344,  
+            "ft" => result * 3.28084,   
+            _ => result               
         };
 
 

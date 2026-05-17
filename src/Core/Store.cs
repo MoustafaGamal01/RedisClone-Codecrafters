@@ -6,7 +6,6 @@ namespace codecrafters_redis.src.Core;
 public class Store
 {
     private readonly ConcurrentDictionary<string, SortedSet<(double score, string value)>> _zadd = new();
-    private readonly ConcurrentDictionary<string, SortedSet<(double longitude, double latitude, string place)>> _geoadd = new();
     private readonly ConcurrentDictionary<string, List<TaskCompletionSource<bool>>> _streamWaiters = new();
     private readonly ConcurrentDictionary<string, Queue<TaskCompletionSource<string>>> _waiters = new();
     private readonly ConcurrentDictionary<string, RedisValue> _store = new();
@@ -665,6 +664,27 @@ public class Store
         }
         if (pos1 == null || pos2 == null) return -1;
         return RedisHaversine.calculate(pos1.Value.latitude, pos1.Value.longitude, pos2.Value.latitude, pos2.Value.longitude);
+    }
+
+    public List<string> GEOSEARCH(string key, double lon, double lat, double distance)
+    {
+        List<string> result = new List<string>();
+        
+        _zadd.Where(kvp => kvp.Key == key).ToList().ForEach(kvp =>
+        {
+            lock (kvp.Value)
+            {
+                foreach (var entry in kvp.Value)
+                {
+                    var pos = RedisGeohashDecoder.Decode((long)entry.score);
+                    var dist = RedisHaversine.calculate(lat, lon, pos.latitude, pos.longitude);
+                    if (dist <= distance)
+                        result.Add(entry.value);
+                }
+            }
+        });
+
+        return result;
     }
 
 }

@@ -52,6 +52,7 @@ public class CommandHandler
             new GeoaddHandler(store),
             new GeoposHandler(store), 
             new GeodistHandler(store),
+            new GeosearchHandler(store)
         };
 
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());
