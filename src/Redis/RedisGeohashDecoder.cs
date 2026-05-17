@@ -40,7 +40,6 @@ internal class RedisGeohashDecoder
         double gridLongitudeMin = MIN_LONGITUDE + LONGITUDE_RANGE * (gridLongitudeNumber / Math.Pow(2, 26));
         double gridLongitudeMax = MIN_LONGITUDE + LONGITUDE_RANGE * ((gridLongitudeNumber + 1) / Math.Pow(2, 26));
 
-        // Calculate the center point of the grid cell
         double latitude = (gridLatitudeMin + gridLatitudeMax) / 2;
         double longitude = (gridLongitudeMin + gridLongitudeMax) / 2;
 

@@ -1,6 +1,6 @@
 ﻿using System;
 
-public class GeohashEncoder
+public class RedisGeohashEncoder
 {
     private const double MIN_LATITUDE = -85.05112878;
     private const double MAX_LATITUDE = 85.05112878;

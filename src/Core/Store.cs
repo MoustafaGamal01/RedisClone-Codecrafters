@@ -616,7 +616,7 @@ public class Store
 
     public int GEOADD(string key, double longitude, double latitude, string place)
     {
-        var score = GeohashEncoder.Encode(latitude, longitude); 
+        var score = RedisGeohashEncoder.Encode(latitude, longitude); 
         ZADD(new List<string> { "ZADD", key, score.ToString(), place });
         return 1;
     }
@@ -647,5 +647,25 @@ public class Store
         }
         return result;
     }
+
+    public double GEODIST(string key, string place1, string place2)
+    {
+        if (!_zadd.TryGetValue(key, out var set)) return -1;
+        (double latitude, double longitude)? pos1 = null;
+        (double latitude, double longitude)? pos2 = null;
+
+        lock (set)
+        {
+            var entry1 = set.FirstOrDefault(x => x.value == place1);
+            if (entry1.value != null)
+                pos1 = RedisGeohashDecoder.Decode((long)entry1.score);
+            var entry2 = set.FirstOrDefault(x => x.value == place2);
+            if (entry2.value != null)
+                pos2 = RedisGeohashDecoder.Decode((long)entry2.score);
+        }
+        if (pos1 == null || pos2 == null) return -1;
+        return RedisHaversine.calculate(pos1.Value.latitude, pos1.Value.longitude, pos2.Value.latitude, pos2.Value.longitude);
+    }
+
 }
 
