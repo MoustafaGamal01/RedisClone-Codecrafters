@@ -674,6 +674,7 @@ public class Store
         {
             lock (kvp.Value)
             {
+                
                 foreach (var entry in kvp.Value)
                 {
                     var pos = RedisGeohashDecoder.Decode((long)entry.score);
