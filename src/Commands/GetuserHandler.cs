@@ -13,16 +13,18 @@ internal class GetuserHandler : ICommandHandler
             return;
         }
 
-        var flags = "flags";
+        var pass = new List<string>();
 
-        var answer = new List<string>();
+        var passwords = new List<string>();
 
-        if(parts[2] == "default") answer.Add("nopass");
+        if(parts[2] == "default") pass.Add("nopass");
 
         await RespWriter.WriteNestedArray(stream, new List<object>
         {
-            flags,
-            answer,
+            "flags",
+            pass,
+            "passwords",
+            passwords
         });
 
     }
