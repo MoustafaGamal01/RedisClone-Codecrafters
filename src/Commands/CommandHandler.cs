@@ -54,7 +54,8 @@ public class CommandHandler
             new GeodistHandler(store),
             new GeosearchHandler(store),
             new WhoAmIHandler(),
-            new GetuserHandler(),
+            new GetuserHandler(store),
+            new SetuserHandler(store),   
         };
 
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());
@@ -65,7 +66,10 @@ public class CommandHandler
         if (parts.Count == 0) { await RespWriter.WriteError(stream, "Empty command"); return; }
 
         var command = parts[0].ToUpper();
-        if (parts[0] == "ACL") command = parts[1].ToUpper();
+        if (command == "ACL" && parts.Count > 1)
+        {
+            command = parts[1].ToUpper();
+        }
 
         if (context.IsInTransaction && command != "EXEC" && command != "DISCARD" && command != "WATCH" && command != "MULTI")
         {

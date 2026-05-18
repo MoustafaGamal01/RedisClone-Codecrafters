@@ -12,6 +12,7 @@ public class Store
     private readonly ConcurrentDictionary<string, string> _configs = new();
     private readonly ConcurrentDictionary<string, long> _keyVersions = new();
     private readonly ConcurrentDictionary<string, List<NetworkStream>> _subscribers = new();
+    private readonly ConcurrentDictionary<string, List<string>> _userPasswords = new();
     private readonly object _lock = new();
     private void IncrementVersion(string key)
     {
@@ -688,5 +689,32 @@ public class Store
         return result;
     }
 
+    public List<string> GetUserPasswords(string username)
+    {
+        return _userPasswords.GetOrAdd(username, _ => new List<string>());
+    }
+
+    public void AddUserPassword(string username, string passwordHash)
+    {
+        var passwords = _userPasswords.GetOrAdd(username, _ => new List<string>());
+        lock (passwords)
+        {
+            if (!passwords.Contains(passwordHash))
+            {
+                passwords.Add(passwordHash);
+            }
+        }
+    }
+
+    public void ClearUserPasswords(string username)
+    {
+        if (_userPasswords.TryGetValue(username, out var passwords))
+        {
+            lock (passwords)
+            {
+                passwords.Clear();
+            }
+        }
+    }
 }
 

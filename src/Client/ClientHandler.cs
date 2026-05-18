@@ -1,4 +1,4 @@
-﻿namespace codecrafters_redis.src.Client;
+namespace codecrafters_redis.src.Client;
 
 public class ClientHandler
 {
@@ -22,13 +22,20 @@ public class ClientHandler
         context.Replication = _context.Replication;
         context.ClientRole["role"] = _context.ClientRole.GetValueOrDefault("role", "master");
 
-        while (true)
+        try
         {
-            var bytesRead = await stream.ReadAsync(buffer);
-            if (bytesRead == 0) break;
-            var request = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-            var parts = RespParser.Parse(request);
-            await _dispatcher.Dispatch(stream, parts, context);
+            while (true)
+            {
+                var bytesRead = await stream.ReadAsync(buffer);
+                if (bytesRead == 0) break;
+                var request = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                var parts = RespParser.Parse(request);
+                await _dispatcher.Dispatch(stream, parts, context);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error handling client: {ex.Message}");
         }
     }
 }
