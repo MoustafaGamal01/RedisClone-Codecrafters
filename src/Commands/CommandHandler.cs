@@ -53,7 +53,8 @@ public class CommandHandler
             new GeoposHandler(store), 
             new GeodistHandler(store),
             new GeosearchHandler(store),
-            new WhoAmIHandler()
+            new WhoAmIHandler(),
+            new GetuserHandler(),
         };
 
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());

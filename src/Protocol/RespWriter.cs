@@ -44,6 +44,34 @@ public static class RespWriter
         await stream.WriteAsync(bytes);
     }
 
+    public static async Task WriteNestedArray(NetworkStream stream, List<object> items)
+    {
+        var sb = new StringBuilder();
+        sb.Append($"*{items.Count}\r\n");
+
+        foreach (var item in items)
+        {
+            switch (item)
+            {
+                case string s:
+                    sb.Append($"${s.Length}\r\n{s}\r\n");
+                    break;
+
+                case List<string> list:
+                    sb.Append($"*{list.Count}\r\n");
+                    foreach (var inner in list)
+                        sb.Append($"${inner.Length}\r\n{inner}\r\n");
+                    break;
+
+                case null:
+                    sb.Append("$-1\r\n");
+                    break;
+            }
+        }
+
+        await stream.WriteAsync(Encoding.UTF8.GetBytes(sb.ToString()));
+    }
+
     public static async Task WriteArrayHeader(NetworkStream stream, int count)
     {
         var bytes = Encoding.UTF8.GetBytes($"*{count}\r\n");
