@@ -56,6 +56,7 @@ public class CommandHandler
             new WhoAmIHandler(),
             new GetuserHandler(store),
             new SetuserHandler(store),   
+            new AuthHandler(store),
         };
 
         _handlers = commands.ToDictionary(c => c.CommandName.ToString());

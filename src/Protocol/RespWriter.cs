@@ -161,4 +161,10 @@ public static class RespWriter
         await stream.WriteAsync(header);
         await stream.WriteAsync(rdbData); 
     }
+
+    public static async Task WriteSimpleError(NetworkStream stream, string errorMessage)
+    {
+        var bytes = Encoding.UTF8.GetBytes($"-{errorMessage}\r\n");
+        await stream.WriteAsync(bytes);
+    }
 }

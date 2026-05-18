@@ -716,5 +716,13 @@ public class Store
             }
         }
     }
+
+    public bool IsValidPassword(string username, string passwordHash)
+    {
+        var passwords = GetUserPasswords(username);
+
+        return passwords.Contains(passwordHash);
+    }
+
 }
 
