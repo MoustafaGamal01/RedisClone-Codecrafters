@@ -66,6 +66,12 @@ public class CommandHandler
     {
         if (parts.Count == 0) { await RespWriter.WriteError(stream, "Empty command"); return; }
 
+        if (context.AuthenticatedUser == null && !parts[0].Equals("AUTH", StringComparison.OrdinalIgnoreCase))
+        {
+            await RespWriter.WriteSimpleError(stream, "NOAUTH Authentication required.");
+            return;
+        }
+
         var command = parts[0].ToUpper();
         if (command == "ACL" && parts.Count > 1)
         {

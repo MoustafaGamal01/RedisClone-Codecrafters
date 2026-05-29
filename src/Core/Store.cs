@@ -716,7 +716,6 @@ public class Store
             }
         }
     }
-
     public bool IsValidPassword(string username, string passwordHash)
     {
         var passwords = GetUserPasswords(username);
@@ -724,5 +723,6 @@ public class Store
         return passwords.Contains(passwordHash);
     }
 
-}
 
+
+}

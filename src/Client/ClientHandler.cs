@@ -5,11 +5,13 @@ public class ClientHandler
     private readonly CommandHandler _dispatcher;
     private readonly string[] _args;
     private readonly ClientContext _context;
-    public ClientHandler(CommandHandler dispatcher, string[] args, ClientContext context)
+    private readonly Store _store;
+    public ClientHandler(CommandHandler dispatcher, string[] args, ClientContext context, Store store)
     {
         _dispatcher = dispatcher;
         _args = args;
         _context = context;
+        _store = store;
     }
 
     public async Task HandleAsync(TcpClient client)
@@ -21,6 +23,16 @@ public class ClientHandler
 
         context.Replication = _context.Replication;
         context.ClientRole["role"] = _context.ClientRole.GetValueOrDefault("role", "master");
+
+        var defaultPasswords = _store.GetUserPasswords("default");
+        if (defaultPasswords == null || defaultPasswords.Count == 0)
+        {
+            context.AuthenticatedUser = "default";
+        }
+        else
+        {
+            context.AuthenticatedUser = null;
+        }
 
         try
         {

@@ -12,6 +12,7 @@ internal class ServerBoot
     private readonly IReplicationRole _replication;
     private readonly CommandHandler _dispatcher;
     private readonly string[] _args;
+    private readonly Store _store;
     public ServerBoot(string[] args)
     {
         _args = args;
@@ -29,13 +30,13 @@ internal class ServerBoot
 
         if (_port == 0) _port = 6379;
 
-        var store = new Store();
-        if (dir != null) store.SetConfig("dir", dir);
-        if (dbfilename != null) store.SetConfig("dbfilename", dbfilename);
+        _store = new Store();
+        if (dir != null) _store.SetConfig("dir", dir);
+        if (dbfilename != null) _store.SetConfig("dbfilename", dbfilename);
         
-        store.LoadRdb();
+        _store.LoadRdb();
 
-        _dispatcher = new CommandHandler(store);
+        _dispatcher = new CommandHandler(_store);
 
         if (replicaOf != null)
         {
@@ -60,7 +61,7 @@ internal class ServerBoot
         sharedContext.Replication = _replication;
         sharedContext.ClientRole["role"] = _replication.Role;
 
-        var clientHandler = new ClientHandler(_dispatcher, _args, sharedContext);
+        var clientHandler = new ClientHandler(_dispatcher, _args, sharedContext, _store);
         var listener = new TcpListener(IPAddress.Any, _port);
         listener.Start();
         Console.WriteLine($"[{_replication.Role}] Listening on port {_port}");

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,6 +18,6 @@ internal class WhoAmIHandler : ICommandHandler
             return;
         }
 
-        await RespWriter.WriteBulkString(stream, "default");
+        await RespWriter.WriteBulkString(stream, context.AuthenticatedUser ?? "default");
     }
 }

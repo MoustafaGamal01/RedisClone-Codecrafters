@@ -10,5 +10,6 @@ public class ClientContext
     public long ReplicationOffset { get; set; } = 0;
     public bool SuppressResponses { get; set; } = false;
 
+    public string? AuthenticatedUser { get; set; }
     public Queue<List<string>> CommandQueue { get; } = new();
 }
