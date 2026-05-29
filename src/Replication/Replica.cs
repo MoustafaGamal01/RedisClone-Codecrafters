@@ -71,7 +71,7 @@ public class Replica : IReplicationRole
 
     private async Task ListenToMaster(NetworkStream stream)
     {
-        var context = new ClientContext { Replication = this };
+        var context = new ClientContext { Replication = this, AuthenticatedUser = "default" };
         context.ClientRole["role"] = "master";
         context.SuppressResponses = true;
 
