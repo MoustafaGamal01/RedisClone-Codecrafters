@@ -14,6 +14,16 @@ public class Store
     private readonly ConcurrentDictionary<string, List<NetworkStream>> _subscribers = new();
     private readonly ConcurrentDictionary<string, List<string>> _userPasswords = new();
     private readonly object _lock = new();
+
+    public Store()
+    {
+        SetConfig("dir", System.IO.Directory.GetCurrentDirectory());
+        SetConfig("appendonly", "no");
+        SetConfig("appenddirname", "appendonlydir");
+        SetConfig("appendfilename", "appendonly.aof");
+        SetConfig("appendfsync", "everysec");
+    }
+
     private void IncrementVersion(string key)
     {
         _keyVersions.AddOrUpdate(key, 1, (_, v) => v + 1);
