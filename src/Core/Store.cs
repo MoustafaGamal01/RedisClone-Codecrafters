@@ -38,7 +38,7 @@ public class Store
     {
         IncrementVersion(key);
        
-        _store[key] = new RedisString { type = value, ExpiresAt = expiresAt };
+        _store[key] = new RedisString { Value = value, ExpiresAt = expiresAt };
 
         return true;
     }
@@ -53,7 +53,7 @@ public class Store
             return null;
         }
 
-        return (entry as RedisString)?.type;
+        return (entry as RedisString)?.Value;
     }
 
     public int RPush(List<string> parts)
@@ -444,22 +444,22 @@ public class Store
         var entry = GetOrCreate<RedisString>(key);
 
         // If the key is new, initialize it to "1"
-        if (entry.type == null)
+        if (entry.Value == null)
         {
             IncrementVersion(key);
-            entry.type = "1";
+            entry.Value = "1";
             return (true, 1);
         }
 
 
         int number = 0;
-        var success = int.TryParse(entry.type, out number);
+        var success = int.TryParse(entry.Value, out number);
         // If the current value is a valid integer
         if (success)
         {
             IncrementVersion(key);
             number++;
-            entry.type = number.ToString();
+            entry.Value = number.ToString();
         }
 
         return (success, number);

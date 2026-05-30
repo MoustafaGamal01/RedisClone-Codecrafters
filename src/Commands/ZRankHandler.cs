@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace codecrafters_redis.src.Commands;
 
-internal class ZrankHandler : ICommandHandler
+internal class ZRankHandler : ICommandHandler
 {
     private readonly Store _store;
-    public ZrankHandler(Store store)
+    public ZRankHandler(Store store)
     {
         _store = store;
     }

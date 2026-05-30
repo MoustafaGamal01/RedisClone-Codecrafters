@@ -5,10 +5,10 @@ using System.Net.Sockets;
 
 namespace codecrafters_redis.src.Commands;
 
-internal class XaddHandler : ICommandHandler
+internal class XAddHandler : ICommandHandler
 {
     private readonly Store _store;
-    public XaddHandler(Store store)
+    public XAddHandler(Store store)
     {
         _store = store;
     }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace codecrafters_redis.src.Commands;
 
-internal class ZcardHandler : ICommandHandler
+internal class ZCardHandler : ICommandHandler
 {
 
     private readonly Store _store;
-    public ZcardHandler(Store store)
+    public ZCardHandler(Store store)
     {
         _store = store;
     }   

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace codecrafters_redis.src.Commands;
 
-internal class ZscoreHandler : ICommandHandler
+internal class ZScoreHandler : ICommandHandler
 {
     private readonly Store _store;
-    public ZscoreHandler(Store store)
+    public ZScoreHandler(Store store)
     {
         _store = store;
     }

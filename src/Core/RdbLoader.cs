@@ -79,7 +79,7 @@ namespace codecrafters_redis.src.Core
                     {
                         string key = ReadString(reader);
                         string value = ReadString(reader);
-                        store[key] = new RedisString { type = value, ExpiresAt = expiresAt };
+                        store[key] = new RedisString { Value = value, ExpiresAt = expiresAt };
                     }
                     else
                     {

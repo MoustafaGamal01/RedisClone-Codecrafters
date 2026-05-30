@@ -3,11 +3,11 @@ using System.Security.Cryptography;
 
 namespace codecrafters_redis.src.Commands;
 
-internal class SetuserHandler : ICommandHandler
+internal class SetUserHandler : ICommandHandler
 {
     private readonly Store _store;
 
-    public SetuserHandler(Store store)
+    public SetUserHandler(Store store)
     {
         _store = store;
     }
