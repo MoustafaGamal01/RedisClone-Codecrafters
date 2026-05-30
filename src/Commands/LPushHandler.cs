@@ -23,7 +23,7 @@ internal class LPushHandler : ICommandHandler
             return;
         }
 
-        var length = _store.LPUSH(parts);
+        var length = _store.LPush(parts);
 
         await RespWriter.WriteInteger(stream, length);
     }

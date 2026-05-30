@@ -1,10 +1,10 @@
-﻿
+
 namespace codecrafters_redis.src.Commands;
 
-internal class GeoaddHandler : ICommandHandler
+internal class GeoAddHandler : ICommandHandler
 {
     private readonly Store _store;
-    public GeoaddHandler(Store store)
+    public GeoAddHandler(Store store)
     {
         _store = store;
     }

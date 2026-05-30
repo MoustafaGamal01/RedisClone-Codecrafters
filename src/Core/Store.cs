@@ -56,7 +56,7 @@ public class Store
         return (entry as RedisString)?.type;
     }
 
-    public int RPUSH(List<string> parts)
+    public int RPush(List<string> parts)
     {
         var key = parts[1];
         IncrementVersion(key);
@@ -78,7 +78,7 @@ public class Store
         return returnCount;
     }
 
-    public int LPUSH(List<string> parts)
+    public int LPush(List<string> parts)
     {
         var key = parts[1];
         IncrementVersion(key);

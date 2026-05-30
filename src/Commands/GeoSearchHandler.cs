@@ -1,9 +1,9 @@
-﻿namespace codecrafters_redis.src.Commands;
+namespace codecrafters_redis.src.Commands;
 
-internal class GeosearchHandler : ICommandHandler
+internal class GeoSearchHandler : ICommandHandler
 {
     private readonly Store _store;
-    public GeosearchHandler(Store store)
+    public GeoSearchHandler(Store store)
     {
         _store = store;
     }

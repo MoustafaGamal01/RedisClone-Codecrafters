@@ -5,11 +5,11 @@ using codecrafters_redis.src.Protocol;
 
 namespace codecrafters_redis.src.Commands;
 
-internal class GetuserHandler : ICommandHandler
+internal class GetUserHandler : ICommandHandler
 {
     private readonly Store _store;
 
-    public GetuserHandler(Store store)
+    public GetUserHandler(Store store)
     {
         _store = store;
     }

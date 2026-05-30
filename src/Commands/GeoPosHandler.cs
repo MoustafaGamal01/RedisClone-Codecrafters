@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace codecrafters_redis.src.Commands;
 
-internal class GeoposHandler : ICommandHandler
+internal class GeoPosHandler : ICommandHandler
 {
     private readonly Store _store;
-    public GeoposHandler(Store store)
+    public GeoPosHandler(Store store)
     {
         _store = store;
     }   
