@@ -16,24 +16,41 @@ internal class ServerBoot
     public ServerBoot(string[] args)
     {
         _args = args;
+        _store = new Store();
         string? replicaOf = null;
-        string? dir = null;
-        string? dbfilename = null;
 
         for (int i = 0; i < args.Length - 1; i++)
         {
             if (args[i] == "--port") _port = int.Parse(args[i + 1]);
             if (args[i] == "--replicaof") replicaOf = args[i + 1];
-            if (args[i] == "--dir") dir = args[i + 1];
-            if (args[i] == "--dbfilename") dbfilename = args[i + 1];
+            if (args[i] == "--dir")
+            {
+                _store.SetConfig("dir", args[i + 1]);
+            }
+            if (args[i] == "--appendonly")
+            {
+                _store.SetConfig("appendonly", args[i + 1]);
+            }
+            if (args[i] == "--appenddirname") 
+            { 
+                _store.SetConfig("appenddirname", args[i + 1]);
+            }
+            if (args[i] == "--appendfilename")
+            {
+                _store.SetConfig("appendfilename", args[i + 1]);
+            }
+            if (args[i] == "--appendfsync")
+            {
+                _store.SetConfig("appendfsync", args[i + 1]);
+            }
+            if (args[i] == "--dbfilename")
+            {
+                _store.SetConfig("dbfilename", args[i + 1]);
+            }
         }
 
         if (_port == 0) _port = 6379;
 
-        _store = new Store();
-        if (dir != null) _store.SetConfig("dir", dir);
-        if (dbfilename != null) _store.SetConfig("dbfilename", dbfilename);
-        
         _store.LoadRdb();
 
         _dispatcher = new CommandHandler(_store);
@@ -64,7 +81,6 @@ internal class ServerBoot
         var clientHandler = new ClientHandler(_dispatcher, _args, sharedContext, _store);
         var listener = new TcpListener(IPAddress.Any, _port);
         listener.Start();
-        Console.WriteLine($"[{_replication.Role}] Listening on port {_port}");
 
         while (true)
         {
