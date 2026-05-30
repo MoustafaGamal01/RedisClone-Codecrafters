@@ -57,10 +57,17 @@ internal class ServerBoot
         {
             var dir = _store.GetConfig("dir");
             var appenddirname = _store.GetConfig("appenddirname");
-            if (dir != null && appenddirname != null)
+            var appendfilename = _store.GetConfig("appendfilename");
+            if (dir != null && appenddirname != null && appendfilename != null)
             {
-                var aofPath = System.IO.Path.Combine(dir, appenddirname);
-                System.IO.Directory.CreateDirectory(aofPath);
+                var aofDir = System.IO.Path.Combine(dir, appenddirname);
+                System.IO.Directory.CreateDirectory(aofDir);
+
+                var aofFilePath = System.IO.Path.Combine(aofDir, $"{appendfilename}.1.incr.aof");
+                if (!System.IO.File.Exists(aofFilePath))
+                {
+                    System.IO.File.Create(aofFilePath).Dispose();
+                }
             }
         }
 
