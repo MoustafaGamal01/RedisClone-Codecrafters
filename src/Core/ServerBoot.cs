@@ -53,6 +53,17 @@ internal class ServerBoot
 
         _store.LoadRdb();
 
+        if (_store.GetConfig("appendonly") == "yes")
+        {
+            var dir = _store.GetConfig("dir");
+            var appenddirname = _store.GetConfig("appenddirname");
+            if (dir != null && appenddirname != null)
+            {
+                var aofPath = System.IO.Path.Combine(dir, appenddirname);
+                System.IO.Directory.CreateDirectory(aofPath);
+            }
+        }
+
         _dispatcher = new CommandHandler(_store);
 
         if (replicaOf != null)
