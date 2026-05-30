@@ -23,7 +23,7 @@ internal class ZremHandler : ICommandHandler
             return;
         }
 
-        var result = _store.ZREM(parts[1], parts[2]);
+        var result = _store.ZRem(parts[1], parts[2]);
 
         await RespWriter.WriteInteger(stream, result);
     }

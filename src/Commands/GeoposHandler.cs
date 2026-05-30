@@ -26,7 +26,7 @@ internal class GeoposHandler : ICommandHandler
         var key = parts[1];
         var places = parts.Skip(2).ToList(); 
 
-        var result = _store.GEOPOS(key, places);
+        var result = _store.GeoPos(key, places);
 
         var sb = new StringBuilder();
         sb.Append($"*{result.Count}\r\n");

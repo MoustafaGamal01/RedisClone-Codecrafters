@@ -26,7 +26,7 @@ internal class ZrangeHandler : ICommandHandler
         var start = int.Parse(parts[2]);
         var end = int.Parse(parts[3]);
 
-        var result = _store.ZRANGE(key, start, end);
+        var result = _store.ZRange(key, start, end);
 
         if(result == null || result.Count == 0) {
             await RespWriter.WriteEmptyArray(stream);

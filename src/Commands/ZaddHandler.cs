@@ -23,7 +23,7 @@ internal class ZaddHandler : ICommandHandler
             return;
         }
 
-        var numberOfMembers = _store.ZADD(parts) == true ? 1 : 0;
+        var numberOfMembers = _store.ZAdd(parts) == true ? 1 : 0;
 
         await RespWriter.WriteInteger(stream, numberOfMembers);
     }

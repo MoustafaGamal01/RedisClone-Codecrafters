@@ -28,7 +28,7 @@ internal class XaddHandler : ICommandHandler
             fields[fieldKey] = fieldValue;
         }
 
-        var (success, resolvedId) = _store.XADD(key, id, fields);
+        var (success, resolvedId) = _store.XAdd(key, id, fields);
         if (!success)
         {
             await RespWriter.WriteError(stream, resolvedId);

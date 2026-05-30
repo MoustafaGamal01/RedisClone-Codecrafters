@@ -25,7 +25,7 @@ internal class GeodistHandler : ICommandHandler
         }
 
         var unit = parts.Count == 5 ? parts[4].ToLower() : "m";
-        var result = _store.GEODIST(parts[1], parts[2], parts[3]);
+        var result = _store.GeoDist(parts[1], parts[2], parts[3]);
 
         if (result == -1)
         {

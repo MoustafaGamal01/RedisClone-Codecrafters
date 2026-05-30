@@ -26,7 +26,7 @@ internal class BLPopHandler : ICommandHandler
         var key = parts[1];
         var timeout = double.Parse(parts[parts.Count - 1]);
 
-        var existing = _store.LPOP(new List<string> { "LPOP", key });
+        var existing = _store.LPop(new List<string> { "LPOP", key });
         if (existing != null)
         {
             await RespWriter.WriteArray(stream, new List<string> { key, existing[0] });
@@ -34,7 +34,7 @@ internal class BLPopHandler : ICommandHandler
         }
 
         var cts = new CancellationTokenSource();
-        var waitTask = _store.BLPOP(key, cts.Token);
+        var waitTask = _store.BLPop(key, cts.Token);
 
         if (timeout == 0)
         {

@@ -23,7 +23,7 @@ internal class ZrankHandler : ICommandHandler
             return;
         }
 
-        var result = _store.ZRANK(parts[1], parts[2]);
+        var result = _store.ZRank(parts[1], parts[2]);
 
         if (result == -1) 
             await RespWriter.WriteNullBulkString(stream);

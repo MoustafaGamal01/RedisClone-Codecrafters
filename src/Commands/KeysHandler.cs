@@ -22,7 +22,7 @@ internal class KeysHandler : ICommandHandler
             return;
         }
 
-        var keys = _store.KEYS(parts[1]);
+        var keys = _store.Keys(parts[1]);
         await RespWriter.WriteArray(stream, keys);
     }
 }

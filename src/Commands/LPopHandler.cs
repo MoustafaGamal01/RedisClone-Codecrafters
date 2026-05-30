@@ -16,7 +16,7 @@ internal class LPopHandler : ICommandHandler
 
     public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
-        var value = _store.LPOP(parts);
+        var value = _store.LPop(parts);
         if (value is null)
             await RespWriter.WriteNullBulkString(stream);
         else if (parts.Count == 2)

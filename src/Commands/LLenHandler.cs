@@ -17,7 +17,7 @@ internal class LLenHandler : ICommandHandler
 
     public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
-        var size = _store.LLEN(parts);
+        var size = _store.LLen(parts);
         await RespWriter.WriteInteger(stream, size);
     }
 

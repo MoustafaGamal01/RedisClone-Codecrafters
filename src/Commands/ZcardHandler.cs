@@ -23,7 +23,7 @@ internal class ZcardHandler : ICommandHandler
             await RespWriter.WriteError(stream, "wrong number of arguments for 'zcard' command\r\n");
         }
         
-        var result = _store.ZCARD(parts[1]);    
+        var result = _store.ZCard(parts[1]);    
         await RespWriter.WriteInteger(stream, result);
     }
 }

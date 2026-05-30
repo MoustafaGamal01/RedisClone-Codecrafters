@@ -19,7 +19,7 @@ internal class TypeHandler : ICommandHandler
     {
         string? key = parts[1];
 
-        var value = _store.TYPE(key);
+        var value = _store.Type(key);
     
         await RespWriter.WriteSimpleString(stream, value.ToString().ToLower());
     }

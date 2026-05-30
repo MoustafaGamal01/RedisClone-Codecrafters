@@ -29,7 +29,7 @@ internal class LRangeHandler : ICommandHandler
             return;
         }
 
-        var list = _store.LRANGE(parts, start, stop);
+        var list = _store.LRange(parts, start, stop);
 
         if (list.Count == 0)
         {

@@ -26,7 +26,7 @@ internal class UnsubscribeHandler:ICommandHandler
 
         var channel = parts[1];
 
-        var size = _store.UNSUBSCRIBE(channel, stream);
+        var size = _store.Unsubscribe(channel, stream);
 
         context.SubscribedChannels.Remove(channel);
 

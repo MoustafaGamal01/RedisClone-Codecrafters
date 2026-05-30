@@ -31,7 +31,7 @@ internal class GeoaddHandler : ICommandHandler
             return;
         }
 
-        var added = _store.GEOADD(key, logitude, latitude, place);
+        var added = _store.GeoAdd(key, logitude, latitude, place);
     
         await RespWriter.WriteInteger(stream, added);
     }

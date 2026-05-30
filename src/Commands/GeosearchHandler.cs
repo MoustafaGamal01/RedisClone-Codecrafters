@@ -17,7 +17,7 @@ internal class GeosearchHandler : ICommandHandler
         var lat = double.Parse(parts[4]);
         var dis = double.Parse(parts[6]);
 
-        var result = _store.GEOSEARCH(key, lon, lat, dis);
+        var result = _store.GeoSearch(key, lon, lat, dis);
 
         await RespWriter.WriteArray(stream, result);
 

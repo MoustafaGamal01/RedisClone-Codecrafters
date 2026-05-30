@@ -15,7 +15,7 @@ internal class IncrHandler : ICommandHandler
     public CommandsName CommandName => CommandsName.INCR;
     public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
-        var result = _store.INCR(parts[1]);
+        var result = _store.Incr(parts[1]);
 
         if(result.Item1 == false)
         {

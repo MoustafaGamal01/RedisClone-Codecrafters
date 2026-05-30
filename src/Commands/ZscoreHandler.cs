@@ -22,7 +22,7 @@ internal class ZscoreHandler : ICommandHandler
             return;
         }
 
-        var result = _store.ZSCORE(parts[1], parts[2]);
+        var result = _store.ZScore(parts[1], parts[2]);
 
         if (result == -1)
             await RespWriter.WriteNullBulkString(stream);

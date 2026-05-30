@@ -26,7 +26,7 @@ internal class PublishHandler : ICommandHandler {
         var channel = parts[1];
         var message = parts[2];
 
-        var list = _store.PUBLISH(channel);
+        var list = _store.Publish(channel);
 
         foreach (var strm in list)
         {

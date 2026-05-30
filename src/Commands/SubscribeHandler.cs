@@ -20,7 +20,7 @@ internal class SubscribeHandler : ICommandHandler
         var channel = parts[1];
         context.SubscribedChannels.Add(channel);
         
-        _store.SUBSCRIBE(channel, stream);
+        _store.Subscribe(channel, stream);
 
         var count = context.SubscribedChannels.Count;
         var response = $"*3\r\n$9\r\nsubscribe\r\n${channel.Length}\r\n{channel}\r\n:{count}\r\n";

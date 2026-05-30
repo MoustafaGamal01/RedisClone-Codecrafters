@@ -99,7 +99,7 @@ public class Store
         return returnCount;
     }
 
-    public List<string> LRANGE(List<string> parts, int start, int stop)
+    public List<string> LRange(List<string> parts, int start, int stop)
     {
         var key = parts[1];
 
@@ -121,7 +121,7 @@ public class Store
         return items.GetRange(start, stop - start + 1);
     }
 
-    public int LLEN(List<string> parts)
+    public int LLen(List<string> parts)
     {
         var key = parts[1];
 
@@ -131,7 +131,7 @@ public class Store
         return list.Items.Count;
     }
 
-    public List<string>? LPOP(List<string> parts)
+    public List<string>? LPop(List<string> parts)
     {
         var key = parts[1];
 
@@ -152,7 +152,7 @@ public class Store
         return result;
     }
 
-    public Task<string> BLPOP(string key, CancellationToken cancellationToken = default)
+    public Task<string> BLPop(string key, CancellationToken cancellationToken = default)
     {
         var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -191,14 +191,14 @@ public class Store
         }
     }
 
-    public (bool Success, string Value) XADD(string key, string id, Dictionary<string, string> fields)
+    public (bool Success, string Value) XAdd(string key, string id, Dictionary<string, string> fields)
     {
         var stream = GetOrCreate<RedisStream>(key);
 
         if (id == "*")
             id = $"{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}-*";
 
-        var (time, seq) = ResolveXADDId(id.Split('-'), stream);
+        var (time, seq) = ResolveXAddId(id.Split('-'), stream);
 
         if (time == 0 && seq == 0)
             return (false, "The ID specified in XADD must be greater than 0-0");
@@ -220,7 +220,7 @@ public class Store
         return (true, resolved);
     }
 
-    public List<(string Id, Dictionary<string, string> Fields)> XREAD(string key, string lastId)
+    public List<(string Id, Dictionary<string, string> Fields)> XRead(string key, string lastId)
     {
         if (!_store.TryGetValue(key, out var entry) || entry is not RedisStream stream)
             return new();
@@ -321,7 +321,7 @@ public class Store
 
         for (int i = 0; i < keys.Count; i++)
         {
-            var entries = XREAD(keys[i], ids[i]);
+            var entries = XRead(keys[i], ids[i]);
             if (entries.Count > 0)
                 result.Add((keys[i], entries));
         }
@@ -342,7 +342,7 @@ public class Store
         }
     }
 
-    private (long, int) ResolveXADDId(string[] parts, RedisStream stream)
+    private (long, int) ResolveXAddId(string[] parts, RedisStream stream)
     {
         long time = long.Parse(parts[0]);
         int seq;
@@ -426,7 +426,7 @@ public class Store
             && (idTime < endTime || (idTime == endTime && idSeq <= endSeq)); 
     }
 
-    public string TYPE(string key)
+    public string Type(string key)
     {
         if (!_store.TryGetValue(key, out var value)) return "none";
 
@@ -439,7 +439,7 @@ public class Store
         };
     }
 
-    public (bool, int) INCR(string key)
+    public (bool, int) Incr(string key)
     {
         var entry = GetOrCreate<RedisString>(key);
 
@@ -475,7 +475,7 @@ public class Store
         return _configs.TryGetValue(key, out var value) ? value : null;
     }
 
-    public List<string> KEYS(string key)
+    public List<string> Keys(string key)
     {
         var pattern = "^" + System.Text.RegularExpressions.Regex.Escape(key).Replace("\\*", ".*") + "$";
         var regex = new System.Text.RegularExpressions.Regex(pattern);
@@ -498,13 +498,13 @@ public class Store
         }
     }
 
-    public void SUBSCRIBE(string channel, NetworkStream stream)
+    public void Subscribe(string channel, NetworkStream stream)
     {
         var list = _subscribers.GetOrAdd(channel, _ => new List<NetworkStream>());
         lock (list) { list.Add(stream); }
     }
 
-    public int UNSUBSCRIBE(string channel, NetworkStream stream)
+    public int Unsubscribe(string channel, NetworkStream stream)
     {
         if (!_subscribers.TryGetValue(channel, out var list)) return 0;
         lock (list)
@@ -514,7 +514,7 @@ public class Store
         }
     }
 
-    public List<NetworkStream> PUBLISH(string channel)
+    public List<NetworkStream> Publish(string channel)
     {
         if (!_subscribers.TryGetValue(channel, out var list)) return new List<NetworkStream>();
         lock (list)
@@ -523,7 +523,7 @@ public class Store
         }
     }
 
-    public bool ZADD(List<string> parts)
+    public bool ZAdd(List<string> parts)
     {
         var key = parts[1];
         var score = double.Parse(parts[2]);
@@ -546,7 +546,7 @@ public class Store
         }
     }
 
-    public int ZRANK(string key, string member)
+    public int ZRank(string key, string member)
     {
         if (!_zadd.TryGetValue(key, out var set)) return -1;
 
@@ -562,7 +562,7 @@ public class Store
         }
     }
 
-    public List<string> ZRANGE(string key, int start, int end)
+    public List<string> ZRange(string key, int start, int end)
     {
         if (!_zadd.TryGetValue(key, out var set)) return new();
 
@@ -583,14 +583,14 @@ public class Store
         }
     }
 
-    public int ZCARD(string key)
+    public int ZCard(string key)
     {
         if (!_zadd.TryGetValue(key, out var set)) return 0;
 
         lock (set) { return set.Count; }
     }
 
-    public double ZSCORE(string key, string member)
+    public double ZScore(string key, string member)
     {
         if(_zadd.TryGetValue(key, out var set))
         {
@@ -609,7 +609,7 @@ public class Store
         return -1;
     }
 
-    public int ZREM(string key, string member)
+    public int ZRem(string key, string member)
     {
         if (!_zadd.TryGetValue(key, out var set)) return 0;
         lock (set)
@@ -624,14 +624,14 @@ public class Store
         }
     }
 
-    public int GEOADD(string key, double longitude, double latitude, string place)
+    public int GeoAdd(string key, double longitude, double latitude, string place)
     {
         var score = RedisGeohashEncoder.Encode(latitude, longitude); 
-        ZADD(new List<string> { "ZADD", key, score.ToString(), place });
+        ZAdd(new List<string> { "ZADD", key, score.ToString(), place });
         return 1;
     }
 
-    public List<(double, double)?> GEOPOS(string key, List<string> places)
+    public List<(double, double)?> GeoPos(string key, List<string> places)
     {
         var result = new List<(double, double)?>();
 
@@ -658,7 +658,7 @@ public class Store
         return result;
     }
 
-    public double GEODIST(string key, string place1, string place2)
+    public double GeoDist(string key, string place1, string place2)
     {
         if (!_zadd.TryGetValue(key, out var set)) return -1;
         (double latitude, double longitude)? pos1 = null;
@@ -677,7 +677,7 @@ public class Store
         return RedisHaversine.calculate(pos1.Value.latitude, pos1.Value.longitude, pos2.Value.latitude, pos2.Value.longitude);
     }
 
-    public List<string> GEOSEARCH(string key, double lon, double lat, double distance)
+    public List<string> GeoSearch(string key, double lon, double lat, double distance)
     {
         List<string> result = new List<string>();
         
