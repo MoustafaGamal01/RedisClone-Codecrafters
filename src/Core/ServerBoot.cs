@@ -63,15 +63,36 @@ internal class ServerBoot
                 var aofDir = System.IO.Path.Combine(dir, appenddirname);
                 System.IO.Directory.CreateDirectory(aofDir);
 
-                var aofFilePath = System.IO.Path.Combine(aofDir, $"{appendfilename}.1.incr.aof");
-                if (!System.IO.File.Exists(aofFilePath))
+                var manifestFilePath = System.IO.Path.Combine(aofDir, $"{appendfilename}.manifest");
+                string activeAofFile = $"{appendfilename}.1.incr.aof";
+
+                if (System.IO.File.Exists(manifestFilePath))
                 {
-                    System.IO.File.Create(aofFilePath).Dispose();
+                    var lines = System.IO.File.ReadAllLines(manifestFilePath);
+                    foreach (var line in lines)
+                    {
+                        var tokens = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        if (tokens.Length >= 6 && tokens[0] == "file" && tokens[2] == "seq" && tokens[4] == "type" && tokens[5] == "i")
+                        {
+                            activeAofFile = tokens[1];
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    var aofFilePath = System.IO.Path.Combine(aofDir, activeAofFile);
+                    if (!System.IO.File.Exists(aofFilePath))
+                    {
+                        System.IO.File.Create(aofFilePath).Dispose();
+                    }
+
+                    var manifestContent = $"file {activeAofFile} seq 1 type i\n";
+                    System.IO.File.WriteAllText(manifestFilePath, manifestContent);
                 }
 
-                var manifestFilePath = System.IO.Path.Combine(aofDir, $"{appendfilename}.manifest");
-                var manifestContent = $"file {appendfilename}.1.incr.aof seq 1 type i\n";
-                System.IO.File.WriteAllText(manifestFilePath, manifestContent);
+                var finalAofFilePath = System.IO.Path.Combine(aofDir, activeAofFile);
+                _store.SetConfig("active_aof_path", finalAofFilePath);
             }
         }
 
