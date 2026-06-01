@@ -17,9 +17,15 @@ internal class ZAddHandler : ICommandHandler
 
     public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
-        if(parts.Count < 4 || parts.Count % 2 != 0)
+        if (parts.Count < 4 || parts.Count % 2 != 0)
         {
-            await RespWriter.WriteError(stream,"wrong number of arguments for 'zadd' command\r\n");
+            await RespWriter.WriteError(stream, "wrong number of arguments for 'zadd' command");
+            return;
+        }
+
+        if (!double.TryParse(parts[2], out _))
+        {
+            await RespWriter.WriteError(stream, "value is not a valid float");
             return;
         }
 

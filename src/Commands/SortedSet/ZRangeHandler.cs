@@ -17,14 +17,18 @@ internal class ZRangeHandler : ICommandHandler
 
     public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
-        if(parts.Count < 3) {
-            await RespWriter.WriteError(stream, "wrong number of arguments for 'ZRANGE' command");
+        if (parts.Count < 4)
+        {
+            await RespWriter.WriteError(stream, "wrong number of arguments for 'zrange' command");
             return;
         }
 
         var key = parts[1];
-        var start = int.Parse(parts[2]);
-        var end = int.Parse(parts[3]);
+        if (!int.TryParse(parts[2], out var start) || !int.TryParse(parts[3], out var end))
+        {
+            await RespWriter.WriteError(stream, "value is not an integer or out of range");
+            return;
+        }
 
         var result = _store.ZRange(key, start, end);
 

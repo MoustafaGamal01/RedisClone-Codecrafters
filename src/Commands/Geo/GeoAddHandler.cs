@@ -13,16 +13,18 @@ internal class GeoAddHandler : ICommandHandler
 
     public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
     {
-        if(parts.Count < 5 || parts.Count % 2 == 0)
+        if (parts.Count < 5 || parts.Count % 2 == 0)
         {
-            await RespWriter.WriteError(stream,"wrong number of arguments for GEOADD command");
+            await RespWriter.WriteError(stream, "wrong number of arguments for 'geoadd' command");
             return;
         }
 
-
         var key = parts[1];
-        var logitude = double.Parse(parts[2]);
-        var latitude = double.Parse(parts[3]);
+        if (!double.TryParse(parts[2], out var logitude) || !double.TryParse(parts[3], out var latitude))
+        {
+            await RespWriter.WriteError(stream, "value is not a valid float");
+            return;
+        }
         var place = parts[4];
 
         if(logitude < -180 || logitude > 180 || latitude < -85.05112878 || latitude > 85.05112878)

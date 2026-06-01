@@ -42,7 +42,30 @@ public class ClientHandler
                 if (bytesRead == 0) break;
                 var request = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                 var parts = RespParser.Parse(request);
-                await _dispatcher.Dispatch(stream, parts, context);
+                try
+                {
+                    await _dispatcher.Dispatch(stream, parts, context);
+                }
+                catch (System.IO.IOException)
+                {
+                    throw;
+                }
+                catch (System.Net.Sockets.SocketException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Internal Error] Command execution failed: {ex}");
+                    try
+                    {
+                        await RespWriter.WriteError(stream, "internal server error");
+                    }
+                    catch
+                    {
+                        throw;
+                    }
+                }
             }
         }
         catch (Exception ex)

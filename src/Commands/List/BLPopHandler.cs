@@ -14,12 +14,16 @@ internal class BLPopHandler : ICommandHandler
     {
         if (parts.Count < 3)
         {
-            await RespWriter.WriteError(stream, "BLPOP requires a key and timeout");
+            await RespWriter.WriteError(stream, "wrong number of arguments for 'blpop' command");
             return;
         }
 
         var key = parts[1];
-        var timeout = double.Parse(parts[parts.Count - 1]);
+        if (!double.TryParse(parts[parts.Count - 1], out var timeout))
+        {
+            await RespWriter.WriteError(stream, "value is not a valid float");
+            return;
+        }
 
         var existing = _store.LPop(new List<string> { "LPOP", key });
         if (existing != null)
