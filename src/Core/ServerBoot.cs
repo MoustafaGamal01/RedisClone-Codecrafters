@@ -68,6 +68,10 @@ internal class ServerBoot
                 {
                     System.IO.File.Create(aofFilePath).Dispose();
                 }
+
+                var manifestFilePath = System.IO.Path.Combine(aofDir, $"{appendfilename}.manifest");
+                var manifestContent = $"file {appendfilename}.1.incr.aof seq 1 type i\n";
+                System.IO.File.WriteAllText(manifestFilePath, manifestContent);
             }
         }
 
