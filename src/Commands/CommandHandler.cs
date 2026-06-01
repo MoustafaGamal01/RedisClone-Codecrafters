@@ -20,54 +20,43 @@ public class CommandHandler
     public CommandHandler(Store store)
     {
         _store = store;
-        var commands = new List<ICommandHandler>
-        {
-            new PingHandler(),
-            new EchoHandler(),
-            new SetHandler(store),
-            new GetHandler(store),
-            new RPushHandler(store),
-            new LRangeHandler(store),
-            new BLPopHandler(store),
-            new LLenHandler(store),
-            new LPopHandler(store),
-            new LPushHandler(store),
-            new TypeHandler(store),
-            new XAddHandler(store),
-            new XRangeHandler(store),
-            new XReadHandler(store),
-            new IncrHandler(store),
-            new MultiHandler(),
-            new ExecHandler(this, store),
-            new DiscardHandler(),
-            new WatchHandler(store),
-            new UnwatchHandler(),
-            new InfoHandler(),
-            new ReplConfHandler(),
-            new PsyncHandler(),
-            new WaitHandler(),
-            new ConfigHandler(store),
-            new KeysHandler(store),
-            new SubscribeHandler(store),
-            new PublishHandler(store),
-            new UnsubscribeHandler(store),
-            new ZAddHandler(store),
-            new ZRankHandler(store),    
-            new ZRangeHandler(store),
-            new ZCardHandler(store),
-            new ZScoreHandler(store),
-            new ZRemHandler(store),
-            new GeoAddHandler(store),
-            new GeoPosHandler(store), 
-            new GeoDistHandler(store),
-            new GeoSearchHandler(store),
-            new WhoAmIHandler(),
-            new GetUserHandler(store),
-            new SetUserHandler(store),   
-            new AuthHandler(store),
-        };
+        var commands = new List<ICommandHandler>();
 
-        _handlers = commands.ToDictionary(c => c.CommandName.ToString());
+        var handlerTypes = typeof(ICommandHandler).Assembly.GetTypes()
+            .Where(t => typeof(ICommandHandler).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+        foreach (var type in handlerTypes)
+        {
+            var ctors = type.GetConstructors();
+            if (ctors.Length == 0) continue;
+
+            var ctor = ctors.OrderByDescending(c => c.GetParameters().Length).First();
+            var parameters = ctor.GetParameters();
+
+            object? instance = null;
+
+            if (parameters.Length == 2 && 
+                parameters[0].ParameterType == typeof(CommandHandler) && 
+                parameters[1].ParameterType == typeof(Store))
+            {
+                instance = Activator.CreateInstance(type, this, store);
+            }
+            else if (parameters.Length == 1 && parameters[0].ParameterType == typeof(Store))
+            {
+                instance = Activator.CreateInstance(type, store);
+            }
+            else if (parameters.Length == 0)
+            {
+                instance = Activator.CreateInstance(type);
+            }
+
+            if (instance is ICommandHandler handler)
+            {
+                commands.Add(handler);
+            }
+        }
+
+        _handlers = commands.ToDictionary(c => c.CommandName.ToString(), StringComparer.OrdinalIgnoreCase);
     }
 
     public async Task Dispatch(NetworkStream stream, List<string> parts, ClientContext context)
