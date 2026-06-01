@@ -1,14 +1,13 @@
 namespace codecrafters_redis.src.Commands;
 
-using codecrafters_redis.src.Client;
 using codecrafters_redis.src.Core;
-using codecrafters_redis.src.IRepository;
 using codecrafters_redis.src.Protocol;
 using System.Net.Sockets;
 
 public class CommandHandler
 {
     private readonly Dictionary<string, ICommandHandler> _handlers;
+    
     private readonly Store _store;
 
     private static readonly HashSet<string> WriteCommands = new(StringComparer.OrdinalIgnoreCase)
@@ -146,7 +145,7 @@ public class CommandHandler
                 var appendfsync = _store.GetConfig("appendfsync");
                 if (appendfsync == "always")
                 {
-                    fs.Flush(true); // forces fsync to disk
+                    fs.Flush(true); 
                 }
                 else
                 {
@@ -155,4 +154,5 @@ public class CommandHandler
             }
         }
     }
+
 }

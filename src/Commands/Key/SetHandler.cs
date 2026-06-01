@@ -1,0 +1,53 @@
+namespace codecrafters_redis.src.Commands.Key;
+
+internal class SetHandler : ICommandHandler
+{
+
+    public CommandsName CommandName => CommandsName.SET;
+    private readonly Store _store;
+
+    public SetHandler(Store store)
+    {
+        _store = store;
+    }
+
+    public async Task Handle(NetworkStream stream, List<string> parts, ClientContext context)
+    {
+        if (parts.Count < 3)
+        {
+            await RespWriter.WriteError(stream, "SET requires key and value");
+            return;
+        }
+
+        DateTime? expiresAt = null;
+
+        // Parse optional EX / PX flags: SET key value [EX seconds | PX milliseconds]
+        if (parts.Count >= 5)
+        {
+            var option = parts[3].ToUpper();
+            if (int.TryParse(parts[4], out var amount))
+            {
+                expiresAt = option switch
+                {
+                    "EX" => DateTime.UtcNow.AddSeconds(amount),
+                    "PX" => DateTime.UtcNow.AddMilliseconds(amount),
+                    _ => null
+                };
+            }
+
+        }
+        var result = _store.Set(parts[1], parts[2], expiresAt);
+
+        if (!context.SuppressResponses)
+        {
+            await RespWriter.WriteSimpleString(stream, "OK");
+        }
+
+        if (context.Replication is Master master)
+        {
+            var propagateParts = parts.Skip(1).ToList();
+            await master.PropagateCommand("SET", propagateParts);
+        }
+
+    }
+}
